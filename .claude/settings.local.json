@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(npm --version)",
-      "Bash(dir \"c:\\\\Users\\\\User\\\\OneDrive\\\\Desktop\\\\car-service-platform\\\\public\" /b /s)"
-    ]
-  }
-}
