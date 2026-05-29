@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>CarService — Web Service Tester</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f2f5; color: #1a1a2e; }
+  header { background: #000; padding: 1.2rem 2rem; display: flex; align-items: center; gap: 1rem; }
+  header h1 { color: #fff; font-size: 1.2rem; font-family: Georgia, serif; letter-spacing: 1px; }
+  header h1 span { color: #e60023; }
+  header .sub { color: #999; font-size: .8rem; margin-top: .1rem; }
+  .wrap { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+  .card { background: #fff; border-radius: 10px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,.08); margin-bottom: 1.5rem; }
+  .card h2 { font-size: 1rem; font-weight: 700; color: #082567; margin-bottom: 1rem; border-bottom: 2px solid #f0f0f0; padding-bottom: .6rem; }
+  .method { display: inline-block; padding: .2rem .6rem; border-radius: 4px; font-size: .75rem; font-weight: 700; margin-right: .5rem; }
+  .get  { background: #d4edda; color: #155724; }
+  .post { background: #d1ecf1; color: #0c5460; }
+  label { display: block; font-size: .82rem; font-weight: 600; margin-bottom: .3rem; color: #333; margin-top: .8rem; }
+  input { width: 100%; padding: .55rem .85rem; border: 1.5px solid #ddd; border-radius: 7px; font-size: .88rem; }
+  input:focus { outline: none; border-color: #e60023; }
+  .btn { display: inline-block; padding: .5rem 1.2rem; border-radius: 6px; border: none; cursor: pointer; font-size: .88rem; font-weight: 600; background: #e60023; color: #fff; margin-top: .8rem; }
+  .btn:hover { opacity: .85; }
+  .btn-add { background: #082567; }
+  pre { margin-top: 1rem; background: #1a1a2e; color: #7ec8e3; padding: 1rem; border-radius: 8px; font-size: .8rem; overflow-x: auto; white-space: pre-wrap; min-height: 60px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .apikey-box { background: #fff8f0; border: 1.5px solid #ffd070; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; }
+  .apikey-box p { font-size: .82rem; color: #7a5c00; margin-bottom: .5rem; }
+  .badge-ok  { background: #d4edda; color: #155724; padding: .15rem .5rem; border-radius: 10px; font-size: .72rem; font-weight: 700; }
+  .badge-err { background: #f8d7da; color: #721c24; padding: .15rem .5rem; border-radius: 10px; font-size: .72rem; font-weight: 700; }
+  .quote-item { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-bottom: .5rem; }
+  #status-bar { text-align: right; font-size: .78rem; color: #888; margin-bottom: 1rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><span>C</span>AR<span>S</span>ERVICE — Web Service Tester</h1>
+    <div class="sub">REST API · JSON · Bearer Token Auth</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- Login për token -->
+  <div class="card" style="margin-bottom:1rem">
+    <h2>🔐 Hyr për të marrë Token</h2>
+    <div class="form-row">
+      <div>
+        <label>Email</label>
+        <input type="email" id="login-email" value="sin.my@gmail.com"/>
+      </div>
+      <div>
+        <label>Fjalëkalimi</label>
+        <input type="password" id="login-pass" value="200400"/>
+      </div>
+    </div>
+    <button class="btn" onclick="doLogin()" style="margin-top:.8rem">Hyr &amp; Merr Token</button>
+    <div id="login-msg" style="margin-top:.6rem;font-size:.82rem;color:#27ae60"></div>
+  </div>
+
+  <!-- API Key -->
+  <div class="apikey-box">
+    <p><strong>API Key (JWT Token)</strong> — plotësohet automatikisht pas login-it:</p>
+    <input type="text" id="apikey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."/>
+    <div id="status-bar"></div>
+  </div>
+
+  <!-- 1. Part Price -->
+  <div class="card">
+    <h2><span class="method get">GET</span> /ws/part-price/:sku — Çmimi i pjesës</h2>
+    <label>SKU i pjesës</label>
+    <input type="text" id="sku-input" placeholder="p.sh. FRE-001" value="FRE-001"/>
+    <button class="btn" onclick="getPrice()">Dërgo kërkesën</button>
+    <pre id="resp-price">// Përgjigja do të shfaqet këtu...</pre>
+  </div>
+
+  <!-- 2. Shipping Cost -->
+  <div class="card">
+    <h2><span class="method post">POST</span> /ws/shipping-cost — Kostoja e dërgimit</h2>
+    <div class="form-row">
+      <div>
+        <label>Latitude destinacion</label>
+        <input type="number" id="ship-lat" placeholder="40.4667" step="0.0001" value="40.4667"/>
+      </div>
+      <div>
+        <label>Longitude destinacion</label>
+        <input type="number" id="ship-lon" placeholder="19.4833" step="0.0001" value="19.4833"/>
+      </div>
+    </div>
+    <label>Qyteti destinacion</label>
+    <input type="text" id="ship-city" placeholder="Vlorë" value="Vlorë"/>
+    <button class="btn" onclick="getShipping()">Dërgo kërkesën</button>
+    <pre id="resp-ship">// Përgjigja do të shfaqet këtu...</pre>
+  </div>
+
+  <!-- 3. Full Quote -->
+  <div class="card">
+    <h2><span class="method post">POST</span> /ws/quote — Ofertë e plotë</h2>
+    <label>Artikujt (SKU + sasia):</label>
+    <div id="quote-items">
+      <div class="quote-item">
+        <input type="text"   class="q-sku" placeholder="SKU" value="FIL-001"/>
+        <input type="number" class="q-qty" placeholder="Sasia" value="2" min="1"/>
+      </div>
+    </div>
+    <button class="btn btn-add" onclick="addItem()" style="margin-top:.5rem;margin-bottom:.5rem">+ Shto artikull</button>
+    <div class="form-row">
+      <div>
+        <label>Latitude destinacion</label>
+        <input type="number" id="q-lat" placeholder="40.4667" step="0.0001" value="40.4667"/>
+      </div>
+      <div>
+        <label>Longitude destinacion</label>
+        <input type="number" id="q-lon" placeholder="19.4833" step="0.0001" value="19.4833"/>
+      </div>
+    </div>
+    <button class="btn" onclick="getQuote()">Gjenero ofertën</button>
+    <pre id="resp-quote">// Përgjigja do të shfaqet këtu...</pre>
+  </div>
+
+</div>
+
+<script>
+function key() { return document.getElementById('apikey').value.trim(); }
+
+async function doLogin() {
+    const email    = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-pass').value;
+    const msg      = document.getElementById('login-msg');
+    try {
+        const r = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+        const d = await r.json();
+        if (!r.ok) { msg.style.color='#c0392b'; msg.textContent = d.error; return; }
+        document.getElementById('apikey').value = d.token;
+        msg.style.color = '#27ae60';
+        msg.textContent = '✓ Token u mor! Tani mund të testosh endpoints.';
+    } catch (e) {
+        msg.style.color='#c0392b'; msg.textContent = 'Gabim: ' + e.message;
+    }
+}
+
+function setStatus(el, ok, ms) {
+    el.innerHTML = ok
+        ? `<span class="badge-ok">200 OK</span> &nbsp; ${ms}ms`
+        : `<span class="badge-err">Gabim</span>`;
+}
+
+async function getPrice() {
+    const sku = document.getElementById('sku-input').value.trim();
+    const t = Date.now();
+    const r = await fetch(`/ws/part-price/${sku}`, { headers: { 'x-api-key': key() } });
+    setStatus(document.getElementById('status-bar'), r.ok, Date.now()-t);
+    document.getElementById('resp-price').textContent = JSON.stringify(await r.json(), null, 2);
+}
+
+async function getShipping() {
+    const body = {
+        dest_latitude:  parseFloat(document.getElementById('ship-lat').value),
+        dest_longitude: parseFloat(document.getElementById('ship-lon').value),
+        dest_city:      document.getElementById('ship-city').value
+    };
+    const t = Date.now();
+    const r = await fetch('/ws/shipping-cost', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': key() },
+        body: JSON.stringify(body)
+    });
+    setStatus(document.getElementById('status-bar'), r.ok, Date.now()-t);
+    document.getElementById('resp-ship').textContent = JSON.stringify(await r.json(), null, 2);
+}
+
+function addItem() {
+    const d = document.createElement('div');
+    d.className = 'quote-item';
+    d.innerHTML = '<input type="text" class="q-sku" placeholder="SKU"/><input type="number" class="q-qty" value="1" min="1"/>';
+    document.getElementById('quote-items').appendChild(d);
+}
+
+async function getQuote() {
+    const items = [...document.querySelectorAll('.quote-item')].map(r => ({
+        sku:      r.querySelector('.q-sku').value.trim(),
+        quantity: parseInt(r.querySelector('.q-qty').value) || 1
+    })).filter(i => i.sku);
+    const body = {
+        items,
+        dest_latitude:  parseFloat(document.getElementById('q-lat').value),
+        dest_longitude: parseFloat(document.getElementById('q-lon').value)
+    };
+    const t = Date.now();
+    const r = await fetch('/ws/quote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': key() },
+        body: JSON.stringify(body)
+    });
+    setStatus(document.getElementById('status-bar'), r.ok, Date.now()-t);
+    document.getElementById('resp-quote').textContent = JSON.stringify(await r.json(), null, 2);
+}
+</script>
+</body>
+</html>

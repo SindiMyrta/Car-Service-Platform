@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>CarService</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div class="auth-wrap">
+  <div class="auth-box">
+    <h1>&#128663; CarService</h1>
+    <p>Platforma e menaxhimit te pjeseve te kembimit</p>
+
+    <div class="tabs">
+      <div class="tab active" onclick="showTab('login')">Hyrje</div>
+      <div class="tab" onclick="showTab('register')">Regjistrim</div>
+    </div>
+
+    <!-- Login -->
+    <div id="tab-login" class="tab-content active">
+      <div id="login-alert"></div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="login-email" placeholder="email@shembull.com" />
+      </div>
+      <div class="form-group">
+        <label>Fjalekalimi</label>
+        <input type="password" id="login-pass" placeholder="••••••••" />
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-top:.5rem" onclick="login()">Hyr</button>
+      <p style="margin-top:1rem;font-size:.8rem;color:#888;text-align:center">
+        Demo: <code>sin.my@gmail.com</code> / <code>200400</code>
+      </p>
+    </div>
+
+    <!-- Register -->
+    <div id="tab-register" class="tab-content">
+      <div id="reg-alert"></div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Emri</label>
+          <input type="text" id="reg-name" placeholder="Emri Mbiemri" />
+        </div>
+        <div class="form-group">
+          <label>Telefoni</label>
+          <input type="tel" id="reg-phone" placeholder="+383..." />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="reg-email" placeholder="email@shembull.com" />
+      </div>
+      <div class="form-group">
+        <label>Fjalekalimi</label>
+        <input type="password" id="reg-pass" placeholder="Min. 6 karaktere" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Qyteti</label>
+          <select id="reg-city">
+            <option value="">Zgjidh qytetin...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Adresa</label>
+          <input type="text" id="reg-addr" placeholder="Rruga, Nr." />
+        </div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-top:.5rem" onclick="register()">Regjistrohu</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CITIES = {
+    'Tirane':      { lat: 41.3275, lon: 19.8187 },
+    'Durres':      { lat: 41.3246, lon: 19.4565 },
+    'Vlore':       { lat: 40.4667, lon: 19.4833 },
+    'Shkoder':     { lat: 42.0683, lon: 19.5126 },
+    'Elbasan':     { lat: 41.1125, lon: 20.0822 },
+    'Fier':        { lat: 40.7239, lon: 19.5567 },
+    'Korçe':       { lat: 40.6186, lon: 20.7808 },
+    'Berat':       { lat: 40.7058, lon: 19.9522 },
+    'Lushnje':     { lat: 40.9419, lon: 19.7047 },
+    'Kavaje':      { lat: 41.1853, lon: 19.5564 },
+    'Gjirokaster': { lat: 40.0758, lon: 20.1394 },
+    'Sarande':     { lat: 39.8747, lon: 20.0053 },
+    'Pogradec':    { lat: 40.9022, lon: 20.6525 },
+    'Kukes':       { lat: 42.0781, lon: 20.4156 },
+    'Lezhe':       { lat: 41.7839, lon: 19.6436 },
+    'Peshkopi':    { lat: 41.6847, lon: 20.4292 },
+    'Burrel':      { lat: 41.6092, lon: 20.0114 },
+    'Gramsh':      { lat: 40.8669, lon: 20.1853 },
+    'Librazhd':    { lat: 41.1833, lon: 20.3167 },
+    'Permet':      { lat: 40.2333, lon: 20.3500 },
+};
+
+const citySelect = document.getElementById('reg-city');
+Object.keys(CITIES).forEach(c => {
+    const o = document.createElement('option'); o.value = c; o.textContent = c; citySelect.appendChild(o);
+});
+
+function showTab(tab) {
+    document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='register')));
+    document.getElementById('tab-login').classList.toggle('active', tab==='login');
+    document.getElementById('tab-register').classList.toggle('active', tab==='register');
+}
+
+function alert_(id, msg, type='error') {
+    document.getElementById(id).innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+}
+
+async function login() {
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-pass').value;
+    if (!email || !password) return alert_('login-alert','Plotëso të gjitha fushat');
+    const r = await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
+    const d = await r.json();
+    if (!r.ok) return alert_('login-alert', d.error);
+    localStorage.setItem('token', d.token);
+    localStorage.setItem('user', JSON.stringify(d.customer));
+    window.location.href = '/dashboard';
+}
+
+async function register() {
+    const cityName = document.getElementById('reg-city').value;
+    const coords   = CITIES[cityName] || { lat: 41.3275, lon: 19.8187 };
+    const body = {
+        name:      document.getElementById('reg-name').value.trim(),
+        email:     document.getElementById('reg-email').value.trim(),
+        password:  document.getElementById('reg-pass').value,
+        phone:     document.getElementById('reg-phone').value.trim(),
+        city:      cityName,
+        latitude:  coords.lat,
+        longitude: coords.lon,
+    };
+    if (!body.name||!body.email||!body.password) return alert_('reg-alert','Emri, emaili dhe fjalëkalimi janë të detyrueshëm');
+    const r = await fetch('/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const d = await r.json();
+    if (!r.ok) return alert_('reg-alert', d.error);
+    localStorage.setItem('token', d.token);
+    localStorage.setItem('user', JSON.stringify(d.customer));
+    window.location.href = '/dashboard';
+}
+
+// Nëse tashmë është i kyçur, ridrejto
+if (localStorage.getItem('token')) window.location.href = '/dashboard';
+
+// Enter key
+document.addEventListener('keydown', e => { if (e.key==='Enter') login(); });
+</script>
+</body>
+</html>

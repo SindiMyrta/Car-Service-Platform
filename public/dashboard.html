@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>CarService</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<nav>
+  <div class="nav-top">
+    <span class="nav-logo-small">CarService</span>
+    <div class="nav-links">
+      <a href="#" onclick="showSection('home')">HOME</a>
+      <a href="#" onclick="showSection('parts')">PJESET</a>
+      <a href="#" onclick="showSection('orders')">POROSITE</a>
+      <a href="#" onclick="logout()">DIL</a>
+    </div>
+  </div>
+  <img src="/images/parts/logo.png" alt="CarService" class="nav-logo-img">
+</nav>
+
+<div class="container" style="padding:2rem 1rem">
+
+  <!-- HOME -->
+  <div id="section-home">
+    <div id="welcome-banner" style="margin-bottom:1.5rem"></div>
+    <div class="grid-4" id="stats-grid"></div>
+    <div style="margin-top:1.5rem" class="card">
+      <div class="card-title">Pjeset e kembimit per makinen tuaj</div>
+      <div id="home-parts-scroll"></div>
+    </div>
+    <div style="margin-top:1.5rem" class="card">
+      <div class="card-title">Porosite e fundit</div>
+      <div id="recent-orders"></div>
+    </div>
+  </div>
+
+  <!-- PARTS -->
+  <div id="section-parts" style="display:none">
+    <div style="display:flex;gap:1rem;margin-bottom:1rem;flex-wrap:wrap">
+      <input id="search-input" placeholder="Kerko pjese..." style="flex:1;min-width:200px" oninput="filterParts()" />
+      <select id="cat-filter" onchange="filterParts()" style="width:180px">
+        <option value="">Te gjitha kategorite</option>
+      </select>
+      <button class="btn btn-primary" onclick="openCart()">
+        &#128722; Shporta (<span id="cart-count">0</span>)
+      </button>
+    </div>
+    <div class="parts-grid" id="parts-grid"></div>
+  </div>
+
+  <!-- ORDERS -->
+  <div id="section-orders" style="display:none">
+    <div class="card">
+      <div class="card-title">Historiku i porosive</div>
+      <div id="orders-table"></div>
+    </div>
+  </div>
+
+  <!-- WEB SERVICE TESTER -->
+
+</div>
+
+<!-- Cart Overlay -->
+<div class="cart-overlay" id="cart-overlay" onclick="closeCart()"></div>
+
+<!-- Cart Panel -->
+<div class="cart-panel" id="cart-panel">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+    <h3>&#128722; Shporta</h3>
+    <button class="btn btn-sm" onclick="closeCart()" style="background:#f0f0f0">&#10005;</button>
+  </div>
+  <div id="cart-items"></div>
+  <div id="cart-summary" style="margin-top:1rem;border-top:2px solid #f0f0f0;padding-top:1rem"></div>
+
+  <div style="margin-top:1rem">
+    <label style="font-size:.85rem;font-weight:600;display:block;margin-bottom:.3rem">Adresa e dergimit</label>
+    <input type="text" id="ship-addr" placeholder="Rruga dhe numri" style="margin-bottom:.5rem"/>
+    <select id="ship-city" style="margin-bottom:.5rem">
+      <option value="">Zgjidh qytetin...</option>
+    </select>
+  </div>
+  <button class="btn btn-success" style="width:100%;margin-top:1rem" onclick="placeOrder()">Konfirmo porosinë</button>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '';
+let token = localStorage.getItem('token');
+let user  = JSON.parse(localStorage.getItem('user') || '{}');
+let allParts = [];
+let cart = {};
+
+const CITIES = {
+    'Tirane':      { lat: 41.3275, lon: 19.8187 },
+    'Durres':      { lat: 41.3246, lon: 19.4565 },
+    'Vlore':       { lat: 40.4667, lon: 19.4833 },
+    'Shkoder':     { lat: 42.0683, lon: 19.5126 },
+    'Elbasan':     { lat: 41.1125, lon: 20.0822 },
+    'Fier':        { lat: 40.7239, lon: 19.5567 },
+    'Korçe':       { lat: 40.6186, lon: 20.7808 },
+    'Berat':       { lat: 40.7058, lon: 19.9522 },
+    'Lushnje':     { lat: 40.9419, lon: 19.7047 },
+    'Kavaje':      { lat: 41.1853, lon: 19.5564 },
+    'Gjirokaster': { lat: 40.0758, lon: 20.1394 },
+    'Sarande':     { lat: 39.8747, lon: 20.0053 },
+    'Pogradec':    { lat: 40.9022, lon: 20.6525 },
+    'Kukes':       { lat: 42.0781, lon: 20.4156 },
+    'Lezhe':       { lat: 41.7839, lon: 19.6436 },
+    'Peshkopi':    { lat: 41.6847, lon: 20.4292 },
+    'Burrel':      { lat: 41.6092, lon: 20.0114 },
+    'Gramsh':      { lat: 40.8669, lon: 20.1853 },
+    'Librazhd':    { lat: 41.1833, lon: 20.3167 },
+    'Permet':      { lat: 40.2333, lon: 20.3500 },
+};
+
+if (!token) { window.location.href = '/'; }
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+function apiFetch(url, opts={}) {
+    return fetch(url, { ...opts, headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+token, ...(opts.headers||{}) } });
+}
+
+function toast(msg, type='') {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.className = 'toast show' + (type ? ' '+type : '');
+    setTimeout(() => t.className='toast', 3000);
+}
+
+function showSection(name) {
+    ['home','parts','orders'].forEach(s =>
+        document.getElementById('section-'+s).style.display = s===name ? '' : 'none'
+    );
+    if (name==='parts')  loadParts();
+    if (name==='orders') loadOrders();
+}
+
+function logout() { localStorage.clear(); window.location.href='/'; }
+
+// ─── HOME ────────────────────────────────────────────────────────────────────
+async function loadHome() {
+    const tierColors = { Fillestar:'badge-fillestar', Bronze:'badge-bronze', Silver:'badge-silver', Gold:'badge-gold' };
+    const tierName = user.tier?.name || 'Bronze';
+    document.getElementById('welcome-banner').innerHTML = `
+      <div class="card">
+        <h2 style="color:#000">Mirë se erdhe, ${user.name}!
+          <span class="badge" style="margin-left:.8rem;background:#FFD700;color:#1a1a1a">${tierName} — ${user.tier?.percentage??0}% zbritje</span>
+        </h2>
+        <p style="color:#888;font-size:.9rem;margin-top:.4rem">Numri i porosive: ${user.totalOrders||0}</p>
+      </div>`;
+
+    const partsData = await (await apiFetch('/api/parts?limit=100')).json();
+    document.getElementById('home-parts-scroll').innerHTML = `
+      <div class="parts-hscroll">
+        ${(partsData.parts||[]).map(p=>`
+          <div class="parts-hscroll-item">
+            ${p.imageUrl ? `<img src="${p.imageUrl}" alt="${p.name}">` : '<div class="parts-hscroll-noimg"></div>'}
+            <div class="parts-hscroll-name">${p.name}</div>
+          </div>`).join('')}
+      </div>`;
+
+    const orders = await (await apiFetch('/api/orders')).json();
+    const stats = [
+        { value: orders.length,     label: 'Porosi gjithsej' },
+        { value: user.tier?.percentage+'%' || '5%', label: 'Zbritja jote' },
+        { value: orders.filter(o=>o.status==='delivered').length, label: 'Të dorëzuara' },
+        { value: orders.filter(o=>o.status==='pending'||o.status==='confirmed').length, label: 'Në proces' },
+    ];
+    document.getElementById('stats-grid').innerHTML = stats.map(s =>
+        `<div class="card stat"><div class="value">${s.value}</div><div class="label">${s.label}</div></div>`
+    ).join('');
+
+    const recent = orders.slice(0,5);
+    document.getElementById('recent-orders').innerHTML = recent.length ? `
+      <table>
+        <thead><tr><th>#</th><th>Data</th><th>Totali</th><th>Statusi</th></tr></thead>
+        <tbody>${recent.map(o=>`
+          <tr>
+            <td>#${String(o._id).slice(-6).toUpperCase()}</td>
+            <td>${new Date(o.createdAt).toLocaleDateString('sq-AL')}</td>
+            <td><strong>${o.total} €</strong></td>
+            <td><span class="badge badge-success">${o.status}</span></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>` : '<p style="color:#888">Nuk ke porosi ende.</p>';
+}
+
+// ─── PARTS ───────────────────────────────────────────────────────────────────
+async function loadParts() {
+    const r = await apiFetch('/api/parts?limit=100');
+    const d = await r.json();
+    allParts = d.parts;
+    const sel = document.getElementById('cat-filter');
+    if (sel.options.length <= 1) {
+        const cats = await (await apiFetch('/api/parts/categories/all')).json();
+        cats.forEach(c => { const o=document.createElement('option'); o.value=c.slug; o.textContent=c.name; sel.appendChild(o); });
+    }
+    renderParts(allParts);
+}
+
+function filterParts() {
+    const q   = document.getElementById('search-input').value.toLowerCase();
+    const cat = document.getElementById('cat-filter').value;
+    renderParts(allParts.filter(p =>
+        (!q || p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q)) &&
+        (!cat || p.category?.slug === cat)
+    ));
+}
+
+function renderParts(parts) {
+    const disc = user.tier?.percentage ?? 0;
+    document.getElementById('parts-grid').innerHTML = parts.map(p => {
+        const pid = String(p._id || p.id);
+        const final = (p.price * (1 - disc/100)).toFixed(2);
+        const sel = cart[pid] ? 'selected' : '';
+        return `<div class="part-card ${sel}" onclick="toggleCart('${pid}')">
+          ${p.imageUrl ? `<img src="${p.imageUrl}" alt="${p.name}" class="part-img" onerror="this.style.display='none'">` : ''}
+          <div class="sku">${p.sku}</div>
+          <div class="name">${p.name}</div>
+          <div class="cat">${p.category?.name || ''}</div>
+          <div class="price">${final} € <small style="color:#aaa;text-decoration:line-through;font-size:.8rem">${p.price}€</small></div>
+          <div class="stock">${p.stock > 0 ? '✓ Në stok: '+p.stock : '✗ Pa stok'}</div>
+          ${cart[pid] ? `<div style="margin-top:.5rem"><span class="badge badge-success">+${cart[pid]} shportë</span></div>` : ''}
+        </div>`;
+    }).join('') || '<p style="color:#888">Nuk u gjetën pjesë.</p>';
+    updateCartCount();
+}
+
+function toggleCart(partId) {
+    const part = allParts.find(p=>String(p._id||p.id)===partId);
+    if (!part) return;
+    if (cart[partId]) { delete cart[partId]; toast(part.name+' u hoq nga shporta',''); }
+    else              { cart[partId] = 1;    toast(part.name+' u shtua në shportë!',''); }
+    filterParts();
+}
+
+function updateCartCount() {
+    document.getElementById('cart-count').textContent = Object.keys(cart).length;
+}
+
+function openCart() {
+    renderCartPanel();
+    document.getElementById('cart-panel').classList.add('open');
+    document.getElementById('cart-overlay').classList.add('show');
+}
+function closeCart() {
+    document.getElementById('cart-panel').classList.remove('open');
+    document.getElementById('cart-overlay').classList.remove('show');
+}
+
+function renderCartPanel() {
+    const disc = user.tier?.percentage ?? 0;
+    const items = Object.entries(cart).map(([id, qty]) => {
+        const p = allParts.find(p=>String(p._id||p.id)===id);
+        if (!p) return '';
+        const final = (p.price * (1-disc/100) * qty).toFixed(2);
+        return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem;padding-bottom:.8rem;border-bottom:1px solid #f0f0f0">
+          <div>
+            <div style="font-weight:600;font-size:.9rem">${p.name}</div>
+            <div style="font-size:.8rem;color:#888">${p.sku}</div>
+            <div style="margin-top:.3rem">
+              <button onclick="changeQty('${id}',-1)" class="btn btn-sm" style="background:#f0f0f0;padding:.2rem .6rem">-</button>
+              <span style="margin:0 .5rem">${qty}</span>
+              <button onclick="changeQty('${id}',1)"  class="btn btn-sm" style="background:#f0f0f0;padding:.2rem .6rem">+</button>
+            </div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-weight:700">${final} €</div>
+            <button onclick="removeFromCart('${id}')" style="background:none;border:none;color:#e94560;cursor:pointer;font-size:.8rem">Hiq</button>
+          </div>
+        </div>`;
+    }).join('');
+    document.getElementById('cart-items').innerHTML = items || '<p style="color:#888">Shporta është bosh</p>';
+
+    const subtotal = Object.entries(cart).reduce((acc,[id,qty])=>{
+        const p=allParts.find(p=>p.id==id); return acc+(p?p.price*(1-disc/100)*qty:0);},0);
+    document.getElementById('cart-summary').innerHTML = `
+      <div style="font-size:.9rem;color:#666">Nëntotali (me -${disc}%): <strong>${subtotal.toFixed(2)} €</strong></div>
+      <div style="font-size:.8rem;color:#aaa;margin-top:.3rem">+ Transporti llogaritet sipas adresës</div>`;
+}
+
+function changeQty(id, delta) {
+    if (!cart[id]) return;
+    cart[id] = Math.max(1, cart[id] + delta);
+    renderCartPanel(); filterParts();
+}
+function removeFromCart(id) {
+    delete cart[id]; renderCartPanel(); filterParts();
+}
+
+async function placeOrder() {
+    const items = Object.entries(cart).map(([id,qty])=>({part_id:id,quantity:qty}));
+    if (!items.length) return toast('Shporta është bosh!','error');
+    const cityName   = document.getElementById('ship-city').value;
+    const cityCoords = CITIES[cityName] || null;
+    const body = {
+        items,
+        shipping_address: document.getElementById('ship-addr').value,
+        dest_city:      cityName || null,
+        dest_latitude:  cityCoords ? cityCoords.lat : null,
+        dest_longitude: cityCoords ? cityCoords.lon : null,
+    };
+    const r = await apiFetch('/api/orders',{method:'POST',body:JSON.stringify(body)});
+    const d = await r.json();
+    if (!r.ok) return toast(d.error,'error');
+    toast(`Porosia u krijua! Totali: ${d.order.total} €`);
+    cart = {}; closeCart(); filterParts();
+
+    // Merr të dhënat e përditësuara (tier mund të ketë ndryshuar)
+    const meR = await apiFetch('/api/auth/me');
+    if (meR.ok) {
+        user = await meR.json();
+        localStorage.setItem('user', JSON.stringify(user));
+        loadHome();
+    }
+}
+
+// ─── ORDERS ──────────────────────────────────────────────────────────────────
+async function loadOrders() {
+    const orders = await (await apiFetch('/api/orders')).json();
+    document.getElementById('orders-table').innerHTML = orders.length ? `
+      <table>
+        <thead><tr><th>#</th><th>Data</th><th>Nëntotali</th><th>Zbritja</th><th>Transport</th><th>Totali</th><th>Statusi</th></tr></thead>
+        <tbody>${orders.map(o=>`
+          <tr>
+            <td><strong>#${String(o._id).slice(-6).toUpperCase()}</strong></td>
+            <td>${new Date(o.createdAt).toLocaleDateString('sq-AL')}</td>
+            <td>${o.subtotal.toFixed(2)} €</td>
+            <td style="color:#27ae60">-${o.discountAmount.toFixed(2)} € (${o.discountPct}%)</td>
+            <td>${o.shippingCost.toFixed(2)} € <small style="color:#aaa">(${Math.round(o.distanceKm||0)} km)</small></td>
+            <td><strong>${o.total.toFixed(2)} €</strong></td>
+            <td><span class="badge badge-success">${o.status}</span></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>` : '<p style="color:#888">Nuk ke porosi ende.</p>';
+}
+
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+const shipCitySel = document.getElementById('ship-city');
+Object.keys(CITIES).forEach(c => {
+    const o = document.createElement('option'); o.value = c; o.textContent = c; shipCitySel.appendChild(o);
+});
+if (user.city && CITIES[user.city]) shipCitySel.value = user.city;
+
+loadHome();
+</script>
+</body>
+</html>
