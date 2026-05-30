@@ -7,8 +7,8 @@ const schema = new mongoose.Schema({
     phone:        String,
     address:      String,
     city:         String,
-    latitude:     { type: Number, default: 42.6629 },
-    longitude:    { type: Number, default: 21.1655 },
+    latitude:     { type: Number, default: 41.3275 },
+    longitude:    { type: Number, default: 19.8187 },
     totalOrders:  { type: Number, default: 0 },
     discountTier: { type: mongoose.Schema.Types.ObjectId, ref: 'DiscountTier' }
 }, { timestamps: true });

@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Admin — CarService</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+<link rel="stylesheet" href="/css/admin.css"/>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="login-wrap">
+  <div class="login-box">
+    <img src="/images/parts/logo.png" alt="CarService"/>
+    <div class="login-box-inner">
+      <p>Paneli i administrimit</p>
+      <div id="login-err" style="display:none" class="alert-error"></div>
+      <div><label>Email</label><input type="email" id="adm-email" placeholder="admin@carservice.al"/></div>
+      <div><label>Fjalekalimi</label><input type="password" id="adm-pass" placeholder="••••••••"/></div>
+      <button onclick="adminLogin()">Hyr si Admin</button>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL -->
+<div class="sidebar" id="sidebar" style="display:none">
+  <div class="sidebar-logo">
+    <img src="/images/parts/logo.png" alt="CarService"/>
+  </div>
+  <div class="nav-item active" onclick="showSec('dashboard',this)">Dashboard</div>
+  <div class="nav-item" onclick="showSec('orders',this)">Porosite</div>
+  <div class="nav-item" onclick="showSec('parts',this)">Pjeset</div>
+  <div class="nav-item" onclick="showSec('customers',this)">Klientet</div>
+  <div class="nav-item" onclick="showSec('categories',this)">Kategorite</div>
+  <div class="nav-item" onclick="showSec('shipping',this)">Transporti</div>
+  <div class="nav-item" onclick="showSec('settings',this)">Cilesimet</div>
+  <div class="sidebar-footer">
+    <button class="logout-btn" onclick="adminLogout()">Dil</button>
+  </div>
+</div>
+
+<div class="main" id="main-panel" style="display:none">
+  <div class="topbar">
+    <h2 id="topbar-title">Dashboard</h2>
+    <span class="topbar-admin" id="topbar-name"></span>
+  </div>
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="section active" id="sec-dashboard">
+      <div class="stats-grid" id="stats-grid"></div>
+      <div class="charts-row">
+        <div class="chart-card">
+          <h4>Porosite sipas muajit</h4>
+          <canvas id="chart-orders"></canvas>
+        </div>
+        <div class="chart-card">
+          <h4>Te ardhurat sipas muajit (€)</h4>
+          <canvas id="chart-revenue"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- ORDERS -->
+    <div class="section" id="sec-orders">
+      <div class="card">
+        <div class="card-title">Te gjitha porosite</div>
+        <div id="orders-tbl"></div>
+        <div class="pagination" id="orders-pages"></div>
+      </div>
+    </div>
+
+    <!-- PARTS -->
+    <div class="section" id="sec-parts">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <h3 style="font-size:1rem">Pjeset e kembimit</h3>
+        <button class="btn btn-primary" onclick="openPartModal()">+ Shto pjese</button>
+      </div>
+      <div class="card">
+        <div id="parts-tbl"></div>
+        <div class="pagination" id="parts-pages"></div>
+      </div>
+    </div>
+
+    <!-- CUSTOMERS -->
+    <div class="section" id="sec-customers">
+      <div class="card">
+        <div class="card-title">Klientet</div>
+        <div id="customers-tbl"></div>
+        <div class="pagination" id="customers-pages"></div>
+      </div>
+    </div>
+
+    <!-- CATEGORIES -->
+    <div class="section" id="sec-categories">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <h3 style="font-size:1rem">Kategorite</h3>
+        <button class="btn btn-primary" onclick="openCatModal()">+ Shto kategori</button>
+      </div>
+      <div class="card">
+        <div id="categories-tbl"></div>
+      </div>
+    </div>
+
+    <!-- SHIPPING -->
+    <div class="section" id="sec-shipping">
+      <div class="card">
+        <div class="card-title">Tarifat e transportit</div>
+        <div id="shipping-tbl"></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="section" id="sec-settings">
+      <div class="settings-grid">
+        <div class="settings-card">
+          <h4>Ndrysho fjalekalimin</h4>
+          <div class="form-group" style="margin-bottom:.8rem">
+            <label>Fjalekalimi aktual</label>
+            <input type="password" id="adm-cur-pass" placeholder="••••••••"/>
+          </div>
+          <div class="form-group" style="margin-bottom:.8rem">
+            <label>Fjalekalimi i ri</label>
+            <input type="password" id="adm-new-pass" placeholder="••••••••"/>
+          </div>
+          <div class="form-group" style="margin-bottom:1rem">
+            <label>Konfirmo fjalekalimin e ri</label>
+            <input type="password" id="adm-confirm-pass" placeholder="••••••••"/>
+          </div>
+          <button class="btn btn-primary" onclick="changeAdminPassword()">Ruaj fjalekalimin</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal pjese -->
+<div class="modal-overlay" id="part-modal">
+  <div class="modal">
+    <h3 id="modal-title">Shto pjese te re</h3>
+    <div class="form-grid">
+      <div class="form-group"><label>SKU</label><input id="p-sku" placeholder="p.sh. FIL-003"/></div>
+      <div class="form-group"><label>Emri</label><input id="p-name" placeholder="Emri i pjeses"/></div>
+      <div class="form-group"><label>Kategoria</label><select id="p-cat"></select></div>
+      <div class="form-group"><label>Cmimi (€)</label><input id="p-price" type="number" step="0.01" placeholder="0.00"/></div>
+      <div class="form-group"><label>Stoku</label><input id="p-stock" type="number" placeholder="0"/></div>
+      <div class="form-group"><label>Pesha (kg)</label><input id="p-weight" type="number" step="0.1" placeholder="0.0"/></div>
+    </div>
+    <div class="form-group" style="margin-top:.8rem"><label>URL Imazhi</label><input id="p-img" placeholder="/images/parts/..."/></div>
+    <div class="modal-footer">
+      <button class="btn" style="background:#f0f0f0;color:#333" onclick="closePartModal()">Anulo</button>
+      <button class="btn btn-primary" onclick="savePart()">Ruaj</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal kategori -->
+<div class="modal-overlay" id="cat-modal">
+  <div class="modal">
+    <h3>Shto kategori te re</h3>
+    <div class="form-group" style="margin-bottom:1rem">
+      <label>Emri i kategorise</label>
+      <input id="cat-name" placeholder="p.sh. Filtrat"/>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" style="background:#f0f0f0;color:#333" onclick="closeCatModal()">Anulo</button>
+      <button class="btn btn-primary" onclick="saveCategory()">Shto</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let adminToken = localStorage.getItem('adminToken');
+let adminData  = JSON.parse(localStorage.getItem('adminData') || 'null');
+let editingPartId = null;
+let categories = [];
+
+// Pagination state
+const PAGE_SIZE = 10;
+let ordersData = [], partsData = [], customersData = [];
+let ordersPage = 1, partsPage = 1, customersPage = 1;
+
+// Charts
+let chartOrders = null, chartRevenue = null;
+
+function apiFetch(url, opts={}) {
+    return fetch(url, { ...opts, headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+adminToken, ...(opts.headers||{}) } });
+}
+
+function toast(msg, type='') {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.className = 'toast show' + (type?' '+type:'');
+    setTimeout(() => t.className='toast', 3000);
+}
+
+async function adminLogin() {
+    const email = document.getElementById('adm-email').value;
+    const pass  = document.getElementById('adm-pass').value;
+    const errEl = document.getElementById('login-err');
+    errEl.style.display = 'none';
+    const r = await fetch('/api/admin/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, password: pass }) });
+    const d = await r.json();
+    if (!r.ok) { errEl.textContent = d.error; errEl.style.display = 'block'; return; }
+    adminToken = d.token;
+    adminData  = d.admin;
+    localStorage.setItem('adminToken', adminToken);
+    localStorage.setItem('adminData', JSON.stringify(adminData));
+    showPanel();
+}
+
+function adminLogout() {
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminData');
+    location.reload();
+}
+
+function showPanel() {
+    document.getElementById('login-wrap').style.display   = 'none';
+    document.getElementById('sidebar').style.display      = 'flex';
+    document.getElementById('main-panel').style.display   = 'flex';
+    document.getElementById('topbar-name').textContent    = adminData?.name || 'Admin';
+    loadDashboard();
+    loadCategories();
+}
+
+function showSec(name, el) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('sec-'+name).classList.add('active');
+    el.classList.add('active');
+    const titles = { dashboard:'Dashboard', orders:'Porosite', parts:'Pjeset', customers:'Klientet', categories:'Kategorite', shipping:'Transporti', settings:'Cilesimet' };
+    document.getElementById('topbar-title').textContent = titles[name] || name;
+    if (name==='orders')     loadOrders();
+    if (name==='parts')      loadParts();
+    if (name==='customers')  loadCustomers();
+    if (name==='categories') loadCategoriesSection();
+    if (name==='shipping')   loadShippingRates();
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
+async function loadDashboard() {
+    const [statsRes, chartRes] = await Promise.all([
+        apiFetch('/api/admin/stats'),
+        apiFetch('/api/admin/chart-data')
+    ]);
+    const d = await statsRes.json();
+    document.getElementById('stats-grid').innerHTML = `
+      <div class="stat-card"><div class="val">${d.totalOrders}</div><div class="lbl">Porosi gjithsej</div></div>
+      <div class="stat-card red"><div class="val">${d.pending}</div><div class="lbl">Ne pritje</div></div>
+      <div class="stat-card green"><div class="val">${d.revenue.toFixed(2)} €</div><div class="lbl">Te ardhura totale</div></div>
+      <div class="stat-card"><div class="val">${d.totalCustomers}</div><div class="lbl">Kliente</div></div>
+      <div class="stat-card"><div class="val">${d.totalParts}</div><div class="lbl">Pjese ne katalog</div></div>`;
+
+    if (chartRes.ok) {
+        const cd = await chartRes.json();
+        renderCharts(cd);
+    }
+}
+
+function renderCharts(cd) {
+    if (typeof Chart === 'undefined') return;
+    try {
+        if (chartOrders) chartOrders.destroy();
+        if (chartRevenue) chartRevenue.destroy();
+        const base = { responsive:true, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true } } };
+        chartOrders = new Chart(document.getElementById('chart-orders'), {
+            type:'bar',
+            data:{ labels: cd.labels, datasets:[{ data: cd.orderData, backgroundColor:'#e60023cc', borderRadius:5 }] },
+            options: base
+        });
+        chartRevenue = new Chart(document.getElementById('chart-revenue'), {
+            type:'line',
+            data:{ labels: cd.labels, datasets:[{ data: cd.revenueData, borderColor:'#FFD700', backgroundColor:'#FFD70022', tension:.4, fill:true, pointBackgroundColor:'#FFD700' }] },
+            options: base
+        });
+    } catch(e) {}
+}
+
+// ── ORDERS (with pagination) ──────────────────────────────────────────────────
+async function loadOrders() {
+    ordersData = await (await apiFetch('/api/admin/orders')).json();
+    ordersPage = 1;
+    renderOrders();
+}
+
+function renderOrders() {
+    const statuses = ['pending','confirmed','shipped','delivered','cancelled'];
+    const total = ordersData.length;
+    const pages = Math.ceil(total / PAGE_SIZE);
+    const slice = ordersData.slice((ordersPage-1)*PAGE_SIZE, ordersPage*PAGE_SIZE);
+
+    document.getElementById('orders-tbl').innerHTML = slice.length ? `
+      <table>
+        <thead><tr><th>#</th><th>Klienti</th><th>Qyteti</th><th>Data</th><th>Totali</th><th>Statusi</th></tr></thead>
+        <tbody>${slice.map(o=>`
+          <tr>
+            <td><strong>#${String(o._id).slice(-6).toUpperCase()}</strong></td>
+            <td>${o.customer?.name||'—'}<br><small style="color:#aaa">${o.customer?.email||''}</small></td>
+            <td>${o.shippingCity||'—'}</td>
+            <td>${new Date(o.createdAt).toLocaleDateString('sq-AL')}</td>
+            <td><strong>${o.total.toFixed(2)} €</strong></td>
+            <td>
+              <select class="status-sel" onchange="changeStatus('${o._id}',this.value)">
+                ${statuses.map(s=>`<option value="${s}" ${s===o.status?'selected':''}>${s}</option>`).join('')}
+              </select>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table>` : '<p style="color:#888">Nuk ka porosi.</p>';
+
+    renderPagination('orders-pages', pages, ordersPage, p => { ordersPage=p; renderOrders(); });
+}
+
+async function changeStatus(id, status) {
+    const r = await apiFetch(`/api/admin/orders/${id}/status`, { method:'PATCH', body: JSON.stringify({ status }) });
+    if (r.ok) toast('Statusi u ndryshua');
+    else { const d=await r.json(); toast(d.error,'error'); loadOrders(); }
+}
+
+// ── PARTS (with pagination) ───────────────────────────────────────────────────
+async function loadCategories() {
+    const r = await apiFetch('/api/admin/categories');
+    categories = await r.json();
+}
+
+async function loadParts() {
+    partsData = await (await apiFetch('/api/admin/parts')).json();
+    partsPage = 1;
+    renderParts();
+}
+
+function renderParts() {
+    const total = partsData.length;
+    const pages = Math.ceil(total / PAGE_SIZE);
+    const slice = partsData.slice((partsPage-1)*PAGE_SIZE, partsPage*PAGE_SIZE);
+
+    document.getElementById('parts-tbl').innerHTML = slice.length ? `
+      <table>
+        <thead><tr><th>SKU</th><th>Emri</th><th>Kategoria</th><th>Cmimi</th><th>Stoku</th><th></th></tr></thead>
+        <tbody>${slice.map(p=>`
+          <tr>
+            <td><code>${p.sku}</code></td>
+            <td>${p.name}</td>
+            <td>${p.category?.name||'—'}</td>
+            <td>${p.price.toFixed(2)} €</td>
+            <td>${p.stock}</td>
+            <td style="display:flex;gap:.4rem">
+              <button class="btn btn-sm btn-primary" onclick='openPartModal(${JSON.stringify(p)})'>Edito</button>
+              <button class="btn btn-sm btn-danger" onclick="deletePart('${p._id}')">Fshi</button>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table>` : '<p style="color:#888">Nuk ka pjese.</p>';
+
+    renderPagination('parts-pages', pages, partsPage, p => { partsPage=p; renderParts(); });
+}
+
+function openPartModal(part=null) {
+    editingPartId = part ? part._id : null;
+    document.getElementById('modal-title').textContent = part ? 'Edito pjesen' : 'Shto pjese te re';
+    document.getElementById('p-sku').value    = part?.sku    || '';
+    document.getElementById('p-name').value   = part?.name   || '';
+    document.getElementById('p-price').value  = part?.price  || '';
+    document.getElementById('p-stock').value  = part?.stock  || '';
+    document.getElementById('p-weight').value = part?.weightKg || '';
+    document.getElementById('p-img').value    = part?.imageUrl || '';
+    const sel = document.getElementById('p-cat');
+    sel.innerHTML = categories.map(c=>`<option value="${c._id}" ${part?.category?._id===c._id||part?.category===c._id?'selected':''}>${c.name}</option>`).join('');
+    document.getElementById('part-modal').classList.add('open');
+}
+
+function closePartModal() {
+    document.getElementById('part-modal').classList.remove('open');
+    editingPartId = null;
+}
+
+async function savePart() {
+    const body = {
+        sku:      document.getElementById('p-sku').value.trim(),
+        name:     document.getElementById('p-name').value.trim(),
+        category: document.getElementById('p-cat').value,
+        price:    parseFloat(document.getElementById('p-price').value),
+        stock:    parseInt(document.getElementById('p-stock').value)||0,
+        weightKg: parseFloat(document.getElementById('p-weight').value)||0,
+        imageUrl: document.getElementById('p-img').value.trim(),
+    };
+    if (!body.sku || !body.name || !body.price) return toast('SKU, emri dhe cmimi jane te detyrueshem','error');
+    const url    = editingPartId ? `/api/admin/parts/${editingPartId}` : '/api/admin/parts';
+    const method = editingPartId ? 'PATCH' : 'POST';
+    const r = await apiFetch(url, { method, body: JSON.stringify(body) });
+    const d = await r.json();
+    if (!r.ok) return toast(d.error,'error');
+    toast(editingPartId ? 'Pjesa u perditesua' : 'Pjesa u shtua');
+    closePartModal();
+    loadParts();
+}
+
+async function deletePart(id) {
+    if (!confirm('Fshi kete pjese?')) return;
+    const r = await apiFetch(`/api/admin/parts/${id}`, { method:'DELETE' });
+    if (r.ok) { toast('Pjesa u fshi'); loadParts(); }
+    else { const d=await r.json(); toast(d.error,'error'); }
+}
+
+// ── CUSTOMERS (with pagination) ───────────────────────────────────────────────
+async function loadCustomers() {
+    customersData = await (await apiFetch('/api/admin/customers')).json();
+    customersPage = 1;
+    renderCustomers();
+}
+
+function renderCustomers() {
+    const total = customersData.length;
+    const pages = Math.ceil(total / PAGE_SIZE);
+    const slice = customersData.slice((customersPage-1)*PAGE_SIZE, customersPage*PAGE_SIZE);
+
+    document.getElementById('customers-tbl').innerHTML = slice.length ? `
+      <table>
+        <thead><tr><th>Emri</th><th>Email</th><th>Qyteti</th><th>Porosi</th><th>Niveli</th><th>Regjistruar</th></tr></thead>
+        <tbody>${slice.map(c=>`
+          <tr>
+            <td><strong>${c.name}</strong></td>
+            <td>${c.email}</td>
+            <td>${c.city||'—'}</td>
+            <td>${c.totalOrders}</td>
+            <td><span class="badge badge-confirmed">${c.discountTier?.name||'—'} (${c.discountTier?.percentage||0}%)</span></td>
+            <td>${new Date(c.createdAt).toLocaleDateString('sq-AL')}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>` : '<p style="color:#888">Nuk ka kliente.</p>';
+
+    renderPagination('customers-pages', pages, customersPage, p => { customersPage=p; renderCustomers(); });
+}
+
+// ── CATEGORIES ────────────────────────────────────────────────────────────────
+async function loadCategoriesSection() {
+    const cats = await (await apiFetch('/api/admin/categories')).json();
+    categories = cats;
+    document.getElementById('categories-tbl').innerHTML = cats.length ? `
+      <table>
+        <thead><tr><th>Emri</th><th>Slug</th><th></th></tr></thead>
+        <tbody>${cats.map(c=>`
+          <tr>
+            <td><strong>${c.name}</strong></td>
+            <td><code>${c.slug}</code></td>
+            <td><button class="btn btn-sm btn-danger" onclick="deleteCategory('${c._id}','${c.name}')">Fshi</button></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>` : '<p style="color:#888">Nuk ka kategori.</p>';
+}
+
+function openCatModal() {
+    document.getElementById('cat-name').value = '';
+    document.getElementById('cat-modal').classList.add('open');
+}
+
+function closeCatModal() {
+    document.getElementById('cat-modal').classList.remove('open');
+}
+
+async function saveCategory() {
+    const name = document.getElementById('cat-name').value.trim();
+    if (!name) return toast('Emri eshte i detyrueshem','error');
+    const r = await apiFetch('/api/admin/categories', { method:'POST', body: JSON.stringify({ name }) });
+    const d = await r.json();
+    if (!r.ok) return toast(d.error,'error');
+    toast('Kategoria u shtua');
+    closeCatModal();
+    loadCategoriesSection();
+    loadCategories();
+}
+
+async function deleteCategory(id, name) {
+    if (!confirm(`Fshi kategorine "${name}"?`)) return;
+    const r = await apiFetch(`/api/admin/categories/${id}`, { method:'DELETE' });
+    if (r.ok) { toast('Kategoria u fshi'); loadCategoriesSection(); loadCategories(); }
+    else { const d=await r.json(); toast(d.error,'error'); }
+}
+
+// ── SHIPPING RATES ────────────────────────────────────────────────────────────
+async function loadShippingRates() {
+    const tbl = document.getElementById('shipping-tbl');
+    tbl.innerHTML = '<p style="color:#aaa">Duke ngarkuar...</p>';
+    try {
+        const res = await apiFetch('/api/admin/shipping-rates');
+        const rates = await res.json();
+        if (!res.ok || !Array.isArray(rates)) {
+            tbl.innerHTML = '<p style="color:#e60023">Gabim: ' + (rates.error || 'Nuk u ngarkuan tarifat') + '</p>';
+            return;
+        }
+        if (!rates.length) { tbl.innerHTML = '<p style="color:#888">Nuk ka tarifa.</p>'; return; }
+        let rows = '';
+        for (const rate of rates) {
+            const maxStr = (rate.maxKm != null) ? rate.maxKm + ' km' : '&infin;';
+            rows += '<tr>' +
+                '<td><strong>' + rate.zoneName + '</strong><br><small style="color:#aaa">' + rate.minKm + ' &ndash; ' + maxStr + '</small></td>' +
+                '<td><input type="number" step="0.01" value="' + rate.baseCost + '" id="base-' + rate._id + '" style="width:90px;padding:.3rem .5rem;border:1.5px solid #ddd;border-radius:6px;font-size:.85rem"/></td>' +
+                '<td><input type="number" step="0.001" value="' + rate.costPerKm + '" id="pkm-' + rate._id + '" style="width:90px;padding:.3rem .5rem;border:1.5px solid #ddd;border-radius:6px;font-size:.85rem"/></td>' +
+                '<td><button class="btn btn-sm btn-success" onclick="saveRate(\'' + rate._id + '\')">Ruaj</button></td>' +
+                '</tr>';
+        }
+        tbl.innerHTML = '<table><thead><tr><th>Zona</th><th>Baza (€)</th><th>Cmimi/km (€)</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>';
+    } catch(err) {
+        tbl.innerHTML = '<p style="color:#e60023">Gabim: ' + err.message + '</p>';
+    }
+}
+
+async function saveRate(id) {
+    const baseCost   = parseFloat(document.getElementById('base-'+id).value);
+    const costPerKm  = parseFloat(document.getElementById('pkm-'+id).value);
+    const r = await apiFetch(`/api/admin/shipping-rates/${id}`, { method:'PATCH', body: JSON.stringify({ baseCost, costPerKm }) });
+    if (r.ok) toast('Tarifa u ruajt');
+    else { const d=await r.json(); toast(d.error,'error'); }
+}
+
+// ── ADMIN PASSWORD ────────────────────────────────────────────────────────────
+async function changeAdminPassword() {
+    const currentPassword = document.getElementById('adm-cur-pass').value;
+    const newPassword     = document.getElementById('adm-new-pass').value;
+    const confirmPassword = document.getElementById('adm-confirm-pass').value;
+    if (!currentPassword || !newPassword || !confirmPassword) return toast('Te gjitha fushat jane te detyrueshme','error');
+    if (newPassword !== confirmPassword) return toast('Fjalekalimi i ri nuk perputhet','error');
+    if (newPassword.length < 6) return toast('Min. 6 karaktere','error');
+    const r = await apiFetch('/api/admin/password', { method:'PATCH', body: JSON.stringify({ currentPassword, newPassword }) });
+    const d = await r.json();
+    if (!r.ok) return toast(d.error,'error');
+    toast('Fjalekalimi u ndryshua');
+    document.getElementById('adm-cur-pass').value = '';
+    document.getElementById('adm-new-pass').value = '';
+    document.getElementById('adm-confirm-pass').value = '';
+}
+
+// ── PAGINATION HELPER ─────────────────────────────────────────────────────────
+function renderPagination(containerId, totalPages, currentPage, onPageClick) {
+    const el = document.getElementById(containerId);
+    if (totalPages <= 1) { el.innerHTML = ''; return; }
+    let html = '';
+    for (let i = 1; i <= totalPages; i++) {
+        html += `<button class="page-btn ${i===currentPage?'active':''}" onclick="(${onPageClick.toString()})(${i})">${i}</button>`;
+    }
+    el.innerHTML = html;
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+if (adminToken && adminData) {
+    apiFetch('/api/admin/stats').then(r => {
+        if (r.ok) showPanel();
+        else { localStorage.removeItem('adminToken'); localStorage.removeItem('adminData'); }
+    }).catch(() => {});
+}
+
+document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+        if (document.getElementById('login-wrap').style.display !== 'none') adminLogin();
+    }
+});
+</script>
+</body>
+</html>

@@ -9,8 +9,9 @@
 <body>
 <div class="auth-wrap">
   <div class="auth-box">
-    <h1>&#128663; CarService</h1>
-    <p>Platforma e menaxhimit te pjeseve te kembimit</p>
+    <img src="/images/parts/logo.png" alt="CarService" style="width:100%;display:block"/>
+    <div class="auth-box-inner">
+    <p style="margin-top:1.2rem">Platforma e menaxhimit te pjeseve te kembimit</p>
 
     <div class="tabs">
       <div class="tab active" onclick="showTab('login')">Hyrje</div>
@@ -22,16 +23,13 @@
       <div id="login-alert"></div>
       <div class="form-group">
         <label>Email</label>
-        <input type="email" id="login-email" placeholder="email@shembull.com" />
+        <input type="email" id="login-email" placeholder="shembull@gmail.com" />
       </div>
       <div class="form-group">
         <label>Fjalekalimi</label>
         <input type="password" id="login-pass" placeholder="••••••••" />
       </div>
       <button class="btn btn-primary" style="width:100%;margin-top:.5rem" onclick="login()">Hyr</button>
-      <p style="margin-top:1rem;font-size:.8rem;color:#888;text-align:center">
-        Demo: <code>sin.my@gmail.com</code> / <code>200400</code>
-      </p>
     </div>
 
     <!-- Register -->
@@ -49,7 +47,7 @@
       </div>
       <div class="form-group">
         <label>Email</label>
-        <input type="email" id="reg-email" placeholder="email@shembull.com" />
+        <input type="email" id="reg-email" placeholder="shembull@gmail.com" />
       </div>
       <div class="form-group">
         <label>Fjalekalimi</label>
@@ -69,31 +67,51 @@
       </div>
       <button class="btn btn-primary" style="width:100%;margin-top:.5rem" onclick="register()">Regjistrohu</button>
     </div>
+    </div>
   </div>
 </div>
 
 <script>
 const CITIES = {
-    'Tirane':      { lat: 41.3275, lon: 19.8187 },
-    'Durres':      { lat: 41.3246, lon: 19.4565 },
-    'Vlore':       { lat: 40.4667, lon: 19.4833 },
-    'Shkoder':     { lat: 42.0683, lon: 19.5126 },
-    'Elbasan':     { lat: 41.1125, lon: 20.0822 },
-    'Fier':        { lat: 40.7239, lon: 19.5567 },
-    'Korçe':       { lat: 40.6186, lon: 20.7808 },
-    'Berat':       { lat: 40.7058, lon: 19.9522 },
-    'Lushnje':     { lat: 40.9419, lon: 19.7047 },
-    'Kavaje':      { lat: 41.1853, lon: 19.5564 },
-    'Gjirokaster': { lat: 40.0758, lon: 20.1394 },
-    'Sarande':     { lat: 39.8747, lon: 20.0053 },
-    'Pogradec':    { lat: 40.9022, lon: 20.6525 },
-    'Kukes':       { lat: 42.0781, lon: 20.4156 },
-    'Lezhe':       { lat: 41.7839, lon: 19.6436 },
-    'Peshkopi':    { lat: 41.6847, lon: 20.4292 },
-    'Burrel':      { lat: 41.6092, lon: 20.0114 },
-    'Gramsh':      { lat: 40.8669, lon: 20.1853 },
-    'Librazhd':    { lat: 41.1833, lon: 20.3167 },
-    'Permet':      { lat: 40.2333, lon: 20.3500 },
+    'Tirane':        { lat: 41.3275, lon: 19.8187 },
+    'Durres':        { lat: 41.3246, lon: 19.4565 },
+    'Vlore':         { lat: 40.4667, lon: 19.4833 },
+    'Shkoder':       { lat: 42.0683, lon: 19.5126 },
+    'Elbasan':       { lat: 41.1125, lon: 20.0822 },
+    'Fier':          { lat: 40.7239, lon: 19.5567 },
+    'Korce':         { lat: 40.6186, lon: 20.7808 },
+    'Berat':         { lat: 40.7058, lon: 19.9522 },
+    'Lushnje':       { lat: 40.9419, lon: 19.7047 },
+    'Kavaje':        { lat: 41.1853, lon: 19.5564 },
+    'Gjirokaster':   { lat: 40.0758, lon: 20.1394 },
+    'Sarande':       { lat: 39.8747, lon: 20.0053 },
+    'Pogradec':      { lat: 40.9022, lon: 20.6525 },
+    'Kukes':         { lat: 42.0781, lon: 20.4156 },
+    'Lezhe':         { lat: 41.7839, lon: 19.6436 },
+    'Peshkopi':      { lat: 41.6847, lon: 20.4292 },
+    'Burrel':        { lat: 41.6092, lon: 20.0114 },
+    'Gramsh':        { lat: 40.8669, lon: 20.1853 },
+    'Librazhd':      { lat: 41.1833, lon: 20.3167 },
+    'Permet':        { lat: 40.2333, lon: 20.3500 },
+    'Kruje':         { lat: 41.5094, lon: 19.7939 },
+    'Lac':           { lat: 41.6333, lon: 19.7167 },
+    'Rreshen':       { lat: 41.7672, lon: 19.9833 },
+    'Bajram Curri':  { lat: 42.3583, lon: 20.0750 },
+    'Krume':         { lat: 42.1939, lon: 20.4139 },
+    'Bulqize':       { lat: 41.4944, lon: 20.2189 },
+    'Cerrik':        { lat: 41.0333, lon: 20.0000 },
+    'Peqin':         { lat: 41.0458, lon: 19.7497 },
+    'Rrogozhine':    { lat: 41.0764, lon: 19.6667 },
+    'Shijak':        { lat: 41.3458, lon: 19.5694 },
+    'Tepelene':      { lat: 40.2956, lon: 20.0183 },
+    'Corovode':      { lat: 40.5028, lon: 20.2272 },
+    'Erseke':        { lat: 40.3378, lon: 20.6819 },
+    'Bilisht':       { lat: 40.6272, lon: 20.9897 },
+    'Ballsh':        { lat: 40.5997, lon: 19.7322 },
+    'Roskovec':      { lat: 40.7344, lon: 19.6986 },
+    'Patos':         { lat: 40.6833, lon: 19.6167 },
+    'Delvine':       { lat: 39.9481, lon: 20.0958 },
+    'Koplik':        { lat: 42.2167, lon: 19.4333 },
 };
 
 const citySelect = document.getElementById('reg-city');
@@ -114,7 +132,7 @@ function alert_(id, msg, type='error') {
 async function login() {
     const email = document.getElementById('login-email').value.trim();
     const password = document.getElementById('login-pass').value;
-    if (!email || !password) return alert_('login-alert','Plotëso të gjitha fushat');
+    if (!email || !password) return alert_('login-alert','Ploteso te gjitha fushat');
     const r = await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
     const d = await r.json();
     if (!r.ok) return alert_('login-alert', d.error);
@@ -135,7 +153,7 @@ async function register() {
         latitude:  coords.lat,
         longitude: coords.lon,
     };
-    if (!body.name||!body.email||!body.password) return alert_('reg-alert','Emri, emaili dhe fjalëkalimi janë të detyrueshëm');
+    if (!body.name||!body.email||!body.password) return alert_('reg-alert','Emri, emaili dhe fjalekalimi jane te detyrueshem');
     const r = await fetch('/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const d = await r.json();
     if (!r.ok) return alert_('reg-alert', d.error);
@@ -144,7 +162,7 @@ async function register() {
     window.location.href = '/dashboard';
 }
 
-// Nëse tashmë është i kyçur, ridrejto
+// Nese tashme eshte i kyçur, ridrejto
 if (localStorage.getItem('token')) window.location.href = '/dashboard';
 
 // Enter key

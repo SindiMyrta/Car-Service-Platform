@@ -21,7 +21,7 @@ async function calcShipping(distanceKm) {
         $or: [{ maxKm: null }, { maxKm: { $gte: distanceKm } }]
     });
     if (!rate) return { cost: 0, zone: 'N/A', distance_km: distanceKm };
-    const cost = Math.min(rate.baseCost + distanceKm * rate.costPerKm, 3.00);
+    const cost = rate.baseCost + distanceKm * rate.costPerKm;
     return {
         cost:         Math.round(cost * 100) / 100,
         zone:         rate.zoneName,
@@ -38,13 +38,15 @@ router.post('/calculate', requireAuth, async (req, res) => {
         const customer = await Customer.findById(req.user.id);
         if (!customer) return res.status(404).json({ error: 'Klienti nuk u gjet' });
 
+        const warehouseLat = parseFloat(process.env.WAREHOUSE_LAT) || 41.3275;
+        const warehouseLon = parseFloat(process.env.WAREHOUSE_LON) || 19.8187;
         const lat2   = dest_latitude  || customer.latitude;
         const lon2   = dest_longitude || customer.longitude;
-        const distKm = haversineKm(customer.latitude, customer.longitude, lat2, lon2);
+        const distKm = haversineKm(warehouseLat, warehouseLon, lat2, lon2);
         const result = await calcShipping(distKm);
 
         res.json({
-            from: { city: customer.city, lat: customer.latitude,  lon: customer.longitude },
+            from: { city: 'Tirane (Depot)', lat: warehouseLat, lon: warehouseLon },
             to:   { city: dest_city || 'Destinacioni', lat: lat2, lon: lon2 },
             ...result
         });

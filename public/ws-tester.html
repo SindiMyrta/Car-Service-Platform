@@ -3,127 +3,166 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>CarService — Web Service Tester</title>
-<style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f2f5; color: #1a1a2e; }
-  header { background: #000; padding: 1.2rem 2rem; display: flex; align-items: center; gap: 1rem; }
-  header h1 { color: #fff; font-size: 1.2rem; font-family: Georgia, serif; letter-spacing: 1px; }
-  header h1 span { color: #e60023; }
-  header .sub { color: #999; font-size: .8rem; margin-top: .1rem; }
-  .wrap { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
-  .card { background: #fff; border-radius: 10px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,.08); margin-bottom: 1.5rem; }
-  .card h2 { font-size: 1rem; font-weight: 700; color: #082567; margin-bottom: 1rem; border-bottom: 2px solid #f0f0f0; padding-bottom: .6rem; }
-  .method { display: inline-block; padding: .2rem .6rem; border-radius: 4px; font-size: .75rem; font-weight: 700; margin-right: .5rem; }
-  .get  { background: #d4edda; color: #155724; }
-  .post { background: #d1ecf1; color: #0c5460; }
-  label { display: block; font-size: .82rem; font-weight: 600; margin-bottom: .3rem; color: #333; margin-top: .8rem; }
-  input { width: 100%; padding: .55rem .85rem; border: 1.5px solid #ddd; border-radius: 7px; font-size: .88rem; }
-  input:focus { outline: none; border-color: #e60023; }
-  .btn { display: inline-block; padding: .5rem 1.2rem; border-radius: 6px; border: none; cursor: pointer; font-size: .88rem; font-weight: 600; background: #e60023; color: #fff; margin-top: .8rem; }
-  .btn:hover { opacity: .85; }
-  .btn-add { background: #082567; }
-  pre { margin-top: 1rem; background: #1a1a2e; color: #7ec8e3; padding: 1rem; border-radius: 8px; font-size: .8rem; overflow-x: auto; white-space: pre-wrap; min-height: 60px; }
-  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-  .apikey-box { background: #fff8f0; border: 1.5px solid #ffd070; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; }
-  .apikey-box p { font-size: .82rem; color: #7a5c00; margin-bottom: .5rem; }
-  .badge-ok  { background: #d4edda; color: #155724; padding: .15rem .5rem; border-radius: 10px; font-size: .72rem; font-weight: 700; }
-  .badge-err { background: #f8d7da; color: #721c24; padding: .15rem .5rem; border-radius: 10px; font-size: .72rem; font-weight: 700; }
-  .quote-item { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-bottom: .5rem; }
-  #status-bar { text-align: right; font-size: .78rem; color: #888; margin-bottom: 1rem; }
-</style>
+<title>CarService - Web Service Tester</title>
+<link rel="stylesheet" href="/css/ws-tester.css"/>
 </head>
 <body>
 
 <header>
+  <img src="/images/parts/logo.png" alt="CarService" class="header-logo"/>
   <div>
-    <h1><span>C</span>AR<span>S</span>ERVICE — Web Service Tester</h1>
+    <h1>Web Service Tester</h1>
     <div class="sub">REST API · JSON · Bearer Token Auth</div>
   </div>
 </header>
 
 <div class="wrap">
 
-  <!-- Login për token -->
-  <div class="card" style="margin-bottom:1rem">
-    <h2>🔐 Hyr për të marrë Token</h2>
+  <!-- Login per token -->
+  <div class="card card-login">
+    <h2>Hyr per te marre Token</h2>
     <div class="form-row">
       <div>
         <label>Email</label>
         <input type="email" id="login-email" value="sin.my@gmail.com"/>
       </div>
       <div>
-        <label>Fjalëkalimi</label>
+        <label>Fjalekalimi</label>
         <input type="password" id="login-pass" value="200400"/>
       </div>
     </div>
-    <button class="btn" onclick="doLogin()" style="margin-top:.8rem">Hyr &amp; Merr Token</button>
-    <div id="login-msg" style="margin-top:.6rem;font-size:.82rem;color:#27ae60"></div>
+    <button class="btn btn-login" onclick="doLogin()">Hyr &amp; Merr Token</button>
+    <div id="login-msg" class="login-msg"></div>
   </div>
 
   <!-- API Key -->
   <div class="apikey-box">
-    <p><strong>API Key (JWT Token)</strong> — plotësohet automatikisht pas login-it:</p>
+    <p><strong>API Key (JWT Token)</strong></p>
     <input type="text" id="apikey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."/>
     <div id="status-bar"></div>
   </div>
 
   <!-- 1. Part Price -->
   <div class="card">
-    <h2><span class="method get">GET</span> /ws/part-price/:sku — Çmimi i pjesës</h2>
-    <label>SKU i pjesës</label>
+    <h2><span class="method get">GET</span> /ws/part-price/:sku - Cmimi i pjeses</h2>
+    <label>SKU i pjeses</label>
     <input type="text" id="sku-input" placeholder="p.sh. FRE-001" value="FRE-001"/>
-    <button class="btn" onclick="getPrice()">Dërgo kërkesën</button>
-    <pre id="resp-price">// Përgjigja do të shfaqet këtu...</pre>
+    <button class="btn" onclick="getPrice()">Dergo kerkesen</button>
+    <pre id="resp-price">// Pergjigja...</pre>
   </div>
 
   <!-- 2. Shipping Cost -->
   <div class="card">
-    <h2><span class="method post">POST</span> /ws/shipping-cost — Kostoja e dërgimit</h2>
-    <div class="form-row">
+    <h2><span class="method post">POST</span> /ws/shipping-cost - Kostoja e dergimit</h2>
+    <label>Qyteti destinacion</label>
+    <select id="ship-city" onchange="cityChange('ship')">
+      <option value="">Zgjidh qytetin...</option>
+    </select>
+    <div class="form-row form-row-mt">
       <div>
-        <label>Latitude destinacion</label>
-        <input type="number" id="ship-lat" placeholder="40.4667" step="0.0001" value="40.4667"/>
+        <label>Latitude</label>
+        <input type="number" id="ship-lat" placeholder="40.4667" step="0.0001"/>
       </div>
       <div>
-        <label>Longitude destinacion</label>
-        <input type="number" id="ship-lon" placeholder="19.4833" step="0.0001" value="19.4833"/>
+        <label>Longitude</label>
+        <input type="number" id="ship-lon" placeholder="19.4833" step="0.0001"/>
       </div>
     </div>
-    <label>Qyteti destinacion</label>
-    <input type="text" id="ship-city" placeholder="Vlorë" value="Vlorë"/>
-    <button class="btn" onclick="getShipping()">Dërgo kërkesën</button>
-    <pre id="resp-ship">// Përgjigja do të shfaqet këtu...</pre>
+    <button class="btn" onclick="getShipping()">Dergo kerkesen</button>
+    <pre id="resp-ship">// Pergjigja...</pre>
   </div>
 
   <!-- 3. Full Quote -->
   <div class="card">
-    <h2><span class="method post">POST</span> /ws/quote — Ofertë e plotë</h2>
+    <h2><span class="method post">POST</span> /ws/quote - Oferte e plote</h2>
     <label>Artikujt (SKU + sasia):</label>
     <div id="quote-items">
       <div class="quote-item">
-        <input type="text"   class="q-sku" placeholder="SKU" value="FIL-001"/>
+        <input type="text" class="q-sku" placeholder="SKU" value="FIL-001"/>
         <input type="number" class="q-qty" placeholder="Sasia" value="2" min="1"/>
       </div>
     </div>
-    <button class="btn btn-add" onclick="addItem()" style="margin-top:.5rem;margin-bottom:.5rem">+ Shto artikull</button>
-    <div class="form-row">
+    <button class="btn btn-add btn-add-mt" onclick="addItem()">+ Shto artikull</button>
+    <div class="form-row form-row-mt">
       <div>
-        <label>Latitude destinacion</label>
-        <input type="number" id="q-lat" placeholder="40.4667" step="0.0001" value="40.4667"/>
+        <label>Latitude</label>
+        <input type="number" id="q-lat" placeholder="40.4667" step="0.0001"/>
       </div>
       <div>
-        <label>Longitude destinacion</label>
-        <input type="number" id="q-lon" placeholder="19.4833" step="0.0001" value="19.4833"/>
+        <label>Longitude</label>
+        <input type="number" id="q-lon" placeholder="19.4833" step="0.0001"/>
       </div>
     </div>
-    <button class="btn" onclick="getQuote()">Gjenero ofertën</button>
-    <pre id="resp-quote">// Përgjigja do të shfaqet këtu...</pre>
+    <button class="btn" onclick="getQuote()">Gjenero oferten</button>
+    <pre id="resp-quote">// Pergjigja...</pre>
   </div>
 
 </div>
 
 <script>
+const CITIES = {
+    'Tirane':        { lat: 41.3275, lon: 19.8187 },
+    'Durres':        { lat: 41.3246, lon: 19.4565 },
+    'Vlore':         { lat: 40.4667, lon: 19.4833 },
+    'Shkoder':       { lat: 42.0683, lon: 19.5126 },
+    'Elbasan':       { lat: 41.1125, lon: 20.0822 },
+    'Fier':          { lat: 40.7239, lon: 19.5567 },
+    'Korce':         { lat: 40.6186, lon: 20.7808 },
+    'Berat':         { lat: 40.7058, lon: 19.9522 },
+    'Lushnje':       { lat: 40.9419, lon: 19.7047 },
+    'Kavaje':        { lat: 41.1853, lon: 19.5564 },
+    'Gjirokaster':   { lat: 40.0758, lon: 20.1394 },
+    'Sarande':       { lat: 39.8747, lon: 20.0053 },
+    'Pogradec':      { lat: 40.9022, lon: 20.6525 },
+    'Kukes':         { lat: 42.0781, lon: 20.4156 },
+    'Lezhe':         { lat: 41.7839, lon: 19.6436 },
+    'Peshkopi':      { lat: 41.6847, lon: 20.4292 },
+    'Burrel':        { lat: 41.6092, lon: 20.0114 },
+    'Gramsh':        { lat: 40.8669, lon: 20.1853 },
+    'Librazhd':      { lat: 41.1833, lon: 20.3167 },
+    'Permet':        { lat: 40.2333, lon: 20.3500 },
+    'Kruje':         { lat: 41.5094, lon: 19.7939 },
+    'Lac':           { lat: 41.6333, lon: 19.7167 },
+    'Rreshen':       { lat: 41.7672, lon: 19.9833 },
+    'Bajram Curri':  { lat: 42.3583, lon: 20.0750 },
+    'Krume':         { lat: 42.1939, lon: 20.4139 },
+    'Bulqize':       { lat: 41.4944, lon: 20.2189 },
+    'Cerrik':        { lat: 41.0333, lon: 20.0000 },
+    'Peqin':         { lat: 41.0458, lon: 19.7497 },
+    'Rrogozhine':    { lat: 41.0764, lon: 19.6667 },
+    'Shijak':        { lat: 41.3458, lon: 19.5694 },
+    'Tepelene':      { lat: 40.2956, lon: 20.0183 },
+    'Corovode':      { lat: 40.5028, lon: 20.2272 },
+    'Erseke':        { lat: 40.3378, lon: 20.6819 },
+    'Bilisht':       { lat: 40.6272, lon: 20.9897 },
+    'Ballsh':        { lat: 40.5997, lon: 19.7322 },
+    'Roskovec':      { lat: 40.7344, lon: 19.6986 },
+    'Patos':         { lat: 40.6833, lon: 19.6167 },
+    'Delvine':       { lat: 39.9481, lon: 20.0958 },
+    'Koplik':        { lat: 42.2167, lon: 19.4333 },
+};
+
+function cityChange(prefix) {
+    const city = document.getElementById(prefix+'-city').value;
+    const c = CITIES[city];
+    if (c) {
+        document.getElementById(prefix+'-lat').value = c.lat;
+        document.getElementById(prefix+'-lon').value = c.lon;
+        document.getElementById('q-lat').value = c.lat;
+        document.getElementById('q-lon').value = c.lon;
+    } else {
+        document.getElementById(prefix+'-lat').value = '';
+        document.getElementById(prefix+'-lon').value = '';
+        document.getElementById('q-lat').value = '';
+        document.getElementById('q-lon').value = '';
+    }
+}
+
+const shipSel = document.getElementById('ship-city');
+Object.keys(CITIES).forEach(c => {
+    const o = document.createElement('option'); o.value = c; o.textContent = c; shipSel.appendChild(o);
+});
+
 function key() { return document.getElementById('apikey').value.trim(); }
 
 async function doLogin() {
@@ -140,7 +179,7 @@ async function doLogin() {
         if (!r.ok) { msg.style.color='#c0392b'; msg.textContent = d.error; return; }
         document.getElementById('apikey').value = d.token;
         msg.style.color = '#27ae60';
-        msg.textContent = '✓ Token u mor! Tani mund të testosh endpoints.';
+        msg.textContent = 'Token u mor! Tani mund te testosh endpoints.';
     } catch (e) {
         msg.style.color='#c0392b'; msg.textContent = 'Gabim: ' + e.message;
     }

@@ -15,6 +15,7 @@
       <a href="#" onclick="showSection('home')">HOME</a>
       <a href="#" onclick="showSection('parts')">PJESET</a>
       <a href="#" onclick="showSection('orders')">POROSITE</a>
+      <a href="#" onclick="showSection('profile')">PROFILI</a>
       <a href="#" onclick="logout()">DIL</a>
     </div>
   </div>
@@ -59,7 +60,30 @@
     </div>
   </div>
 
-  <!-- WEB SERVICE TESTER -->
+  <!-- PROFILE -->
+  <div id="section-profile" style="display:none">
+    <div class="grid-2" style="gap:1.5rem">
+      <div class="card">
+        <div class="card-title">Ndrysho te dhenat</div>
+        <div id="profile-alert"></div>
+        <div class="form-group"><label>Emri</label><input type="text" id="prof-name" /></div>
+        <div class="form-group"><label>Telefoni</label><input type="text" id="prof-phone" /></div>
+        <div class="form-group"><label>Qyteti</label>
+          <select id="prof-city"><option value="">Zgjidh qytetin...</option></select>
+        </div>
+        <div class="form-group"><label>Adresa</label><input type="text" id="prof-address" placeholder="Rruga dhe numri" /></div>
+        <button class="btn btn-primary" style="margin-top:.5rem;width:100%" onclick="saveProfile()">Ruaj ndryshimet</button>
+      </div>
+      <div class="card">
+        <div class="card-title">Ndrysho fjalekalimin</div>
+        <div id="pass-alert"></div>
+        <div class="form-group"><label>Fjalekalimi aktual</label><input type="password" id="pass-current" /></div>
+        <div class="form-group"><label>Fjalekalimi i ri</label><input type="password" id="pass-new" /></div>
+        <div class="form-group"><label>Konfirmo fjalekalimin e ri</label><input type="password" id="pass-confirm" /></div>
+        <button class="btn btn-primary" style="margin-top:.5rem;width:100%" onclick="changePassword()">Ndrysho fjalekalimin</button>
+      </div>
+    </div>
+  </div>
 
 </div>
 
@@ -82,40 +106,83 @@
       <option value="">Zgjidh qytetin...</option>
     </select>
   </div>
-  <button class="btn btn-success" style="width:100%;margin-top:1rem" onclick="placeOrder()">Konfirmo porosinë</button>
+  <button class="btn btn-success" style="width:100%;margin-top:1rem" onclick="placeOrder()">Konfirmo porosine</button>
 </div>
 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
+
+<!-- Modal detajesh porosise -->
+<div id="order-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:14px;padding:2rem;max-width:600px;width:95%;max-height:85vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.2)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem">
+      <h3 style="color:#16213e">Detajet e Porosise</h3>
+      <button onclick="document.getElementById('order-modal').style.display='none'" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:#888">&times;</button>
+    </div>
+    <div id="order-modal-body"></div>
+  </div>
+</div>
+
+<!-- Modal konfirmimi -->
+<div id="confirm-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:14px;padding:2rem;max-width:360px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.2);text-align:center">
+    <h3 style="margin-bottom:.5rem;color:#16213e">Anulo Porosine</h3>
+    <p id="confirm-msg" style="color:#666;font-size:.95rem;margin-bottom:1.5rem"></p>
+    <div style="display:flex;gap:.8rem;justify-content:center">
+      <button id="confirm-no"  class="btn" style="background:#f0f0f0;color:#333;min-width:100px">Jo</button>
+      <button id="confirm-yes" class="btn" style="background:#e94560;color:#fff;min-width:100px">Po, Anulo</button>
+    </div>
+  </div>
+</div>
 
 <script>
 const API = '';
 let token = localStorage.getItem('token');
 let user  = JSON.parse(localStorage.getItem('user') || '{}');
 let allParts = [];
-let cart = {};
+let cart = JSON.parse(localStorage.getItem('cart') || '{}');
+function saveCart() { localStorage.setItem('cart', JSON.stringify(cart)); }
 
 const CITIES = {
-    'Tirane':      { lat: 41.3275, lon: 19.8187 },
-    'Durres':      { lat: 41.3246, lon: 19.4565 },
-    'Vlore':       { lat: 40.4667, lon: 19.4833 },
-    'Shkoder':     { lat: 42.0683, lon: 19.5126 },
-    'Elbasan':     { lat: 41.1125, lon: 20.0822 },
-    'Fier':        { lat: 40.7239, lon: 19.5567 },
-    'Korçe':       { lat: 40.6186, lon: 20.7808 },
-    'Berat':       { lat: 40.7058, lon: 19.9522 },
-    'Lushnje':     { lat: 40.9419, lon: 19.7047 },
-    'Kavaje':      { lat: 41.1853, lon: 19.5564 },
-    'Gjirokaster': { lat: 40.0758, lon: 20.1394 },
-    'Sarande':     { lat: 39.8747, lon: 20.0053 },
-    'Pogradec':    { lat: 40.9022, lon: 20.6525 },
-    'Kukes':       { lat: 42.0781, lon: 20.4156 },
-    'Lezhe':       { lat: 41.7839, lon: 19.6436 },
-    'Peshkopi':    { lat: 41.6847, lon: 20.4292 },
-    'Burrel':      { lat: 41.6092, lon: 20.0114 },
-    'Gramsh':      { lat: 40.8669, lon: 20.1853 },
-    'Librazhd':    { lat: 41.1833, lon: 20.3167 },
-    'Permet':      { lat: 40.2333, lon: 20.3500 },
+    'Tirane':        { lat: 41.3275, lon: 19.8187 },
+    'Durres':        { lat: 41.3246, lon: 19.4565 },
+    'Vlore':         { lat: 40.4667, lon: 19.4833 },
+    'Shkoder':       { lat: 42.0683, lon: 19.5126 },
+    'Elbasan':       { lat: 41.1125, lon: 20.0822 },
+    'Fier':          { lat: 40.7239, lon: 19.5567 },
+    'Korce':         { lat: 40.6186, lon: 20.7808 },
+    'Berat':         { lat: 40.7058, lon: 19.9522 },
+    'Lushnje':       { lat: 40.9419, lon: 19.7047 },
+    'Kavaje':        { lat: 41.1853, lon: 19.5564 },
+    'Gjirokaster':   { lat: 40.0758, lon: 20.1394 },
+    'Sarande':       { lat: 39.8747, lon: 20.0053 },
+    'Pogradec':      { lat: 40.9022, lon: 20.6525 },
+    'Kukes':         { lat: 42.0781, lon: 20.4156 },
+    'Lezhe':         { lat: 41.7839, lon: 19.6436 },
+    'Peshkopi':      { lat: 41.6847, lon: 20.4292 },
+    'Burrel':        { lat: 41.6092, lon: 20.0114 },
+    'Gramsh':        { lat: 40.8669, lon: 20.1853 },
+    'Librazhd':      { lat: 41.1833, lon: 20.3167 },
+    'Permet':        { lat: 40.2333, lon: 20.3500 },
+    'Kruje':         { lat: 41.5094, lon: 19.7939 },
+    'Lac':           { lat: 41.6333, lon: 19.7167 },
+    'Rreshen':       { lat: 41.7672, lon: 19.9833 },
+    'Bajram Curri':  { lat: 42.3583, lon: 20.0750 },
+    'Krume':         { lat: 42.1939, lon: 20.4139 },
+    'Bulqize':       { lat: 41.4944, lon: 20.2189 },
+    'Cerrik':        { lat: 41.0333, lon: 20.0000 },
+    'Peqin':         { lat: 41.0458, lon: 19.7497 },
+    'Rrogozhine':    { lat: 41.0764, lon: 19.6667 },
+    'Shijak':        { lat: 41.3458, lon: 19.5694 },
+    'Tepelene':      { lat: 40.2956, lon: 20.0183 },
+    'Corovode':      { lat: 40.5028, lon: 20.2272 },
+    'Erseke':        { lat: 40.3378, lon: 20.6819 },
+    'Bilisht':       { lat: 40.6272, lon: 20.9897 },
+    'Ballsh':        { lat: 40.5997, lon: 19.7322 },
+    'Roskovec':      { lat: 40.7344, lon: 19.6986 },
+    'Patos':         { lat: 40.6833, lon: 19.6167 },
+    'Delvine':       { lat: 39.9481, lon: 20.0958 },
+    'Koplik':        { lat: 42.2167, lon: 19.4333 },
 };
 
 if (!token) { window.location.href = '/'; }
@@ -132,11 +199,52 @@ function toast(msg, type='') {
 }
 
 function showSection(name) {
-    ['home','parts','orders'].forEach(s =>
+    ['home','parts','orders','profile'].forEach(s =>
         document.getElementById('section-'+s).style.display = s===name ? '' : 'none'
     );
-    if (name==='parts')  loadParts();
-    if (name==='orders') loadOrders();
+    if (name==='parts')   loadParts();
+    if (name==='orders')  loadOrders();
+    if (name==='profile') loadProfile();
+}
+
+function loadProfile() {
+    document.getElementById('prof-name').value    = user.name    || '';
+    document.getElementById('prof-phone').value   = user.phone   || '';
+    document.getElementById('prof-address').value = user.address || '';
+    if (user.city && CITIES[user.city]) document.getElementById('prof-city').value = user.city;
+}
+
+async function saveProfile() {
+    const body = {
+        name:    document.getElementById('prof-name').value.trim(),
+        phone:   document.getElementById('prof-phone').value.trim(),
+        city:    document.getElementById('prof-city').value,
+        address: document.getElementById('prof-address').value.trim(),
+    };
+    const r = await apiFetch('/api/auth/profile', { method:'PATCH', body: JSON.stringify(body) });
+    const d = await r.json();
+    const el = document.getElementById('profile-alert');
+    if (!r.ok) { el.innerHTML=`<div class="alert alert-error">${d.error}</div>`; return; }
+    user = { ...user, ...d };
+    localStorage.setItem('user', JSON.stringify(user));
+    el.innerHTML = `<div class="alert alert-success">Te dhenat u ruajten!</div>`;
+    setTimeout(() => el.innerHTML='', 3000);
+}
+
+async function changePassword() {
+    const current = document.getElementById('pass-current').value;
+    const newPass  = document.getElementById('pass-new').value;
+    const confirm  = document.getElementById('pass-confirm').value;
+    const el = document.getElementById('pass-alert');
+    if (newPass !== confirm) { el.innerHTML=`<div class="alert alert-error">Fjalekalimi i ri nuk perputhet</div>`; return; }
+    const r = await apiFetch('/api/auth/password', { method:'PATCH', body: JSON.stringify({ currentPassword: current, newPassword: newPass }) });
+    const d = await r.json();
+    if (!r.ok) { el.innerHTML=`<div class="alert alert-error">${d.error}</div>`; return; }
+    el.innerHTML = `<div class="alert alert-success">Fjalekalimi u ndryshua!</div>`;
+    document.getElementById('pass-current').value = '';
+    document.getElementById('pass-new').value = '';
+    document.getElementById('pass-confirm').value = '';
+    setTimeout(() => el.innerHTML='', 3000);
 }
 
 function logout() { localStorage.clear(); window.location.href='/'; }
@@ -147,7 +255,7 @@ async function loadHome() {
     const tierName = user.tier?.name || 'Bronze';
     document.getElementById('welcome-banner').innerHTML = `
       <div class="card">
-        <h2 style="color:#000">Mirë se erdhe, ${user.name}!
+        <h2 style="color:#000">Mire se erdhe, ${user.name}!
           <span class="badge" style="margin-left:.8rem;background:#FFD700;color:#1a1a1a">${tierName} — ${user.tier?.percentage??0}% zbritje</span>
         </h2>
         <p style="color:#888;font-size:.9rem;margin-top:.4rem">Numri i porosive: ${user.totalOrders||0}</p>
@@ -167,14 +275,15 @@ async function loadHome() {
     const stats = [
         { value: orders.length,     label: 'Porosi gjithsej' },
         { value: user.tier?.percentage+'%' || '5%', label: 'Zbritja jote' },
-        { value: orders.filter(o=>o.status==='delivered').length, label: 'Të dorëzuara' },
-        { value: orders.filter(o=>o.status==='pending'||o.status==='confirmed').length, label: 'Në proces' },
+        { value: orders.filter(o=>o.status==='delivered').length, label: 'Te dorezuara' },
+        { value: orders.filter(o=>o.status==='pending'||o.status==='confirmed').length, label: 'Ne proces' },
     ];
     document.getElementById('stats-grid').innerHTML = stats.map(s =>
         `<div class="card stat"><div class="value">${s.value}</div><div class="label">${s.label}</div></div>`
     ).join('');
 
     const recent = orders.slice(0,5);
+    const statusBadge = s => s==='delivered'?'badge-success':s==='cancelled'?'badge-danger':s==='shipped'?'badge-shipped':'badge-warning';
     document.getElementById('recent-orders').innerHTML = recent.length ? `
       <table>
         <thead><tr><th>#</th><th>Data</th><th>Totali</th><th>Statusi</th></tr></thead>
@@ -182,8 +291,8 @@ async function loadHome() {
           <tr>
             <td>#${String(o._id).slice(-6).toUpperCase()}</td>
             <td>${new Date(o.createdAt).toLocaleDateString('sq-AL')}</td>
-            <td><strong>${o.total} €</strong></td>
-            <td><span class="badge badge-success">${o.status}</span></td>
+            <td><strong>${o.total.toFixed(2)} €</strong></td>
+            <td><span class="badge ${statusBadge(o.status)}">${o.status}</span></td>
           </tr>`).join('')}
         </tbody>
       </table>` : '<p style="color:#888">Nuk ke porosi ende.</p>';
@@ -216,17 +325,19 @@ function renderParts(parts) {
     document.getElementById('parts-grid').innerHTML = parts.map(p => {
         const pid = String(p._id || p.id);
         const final = (p.price * (1 - disc/100)).toFixed(2);
+        const noStock = p.stock <= 0;
         const sel = cart[pid] ? 'selected' : '';
-        return `<div class="part-card ${sel}" onclick="toggleCart('${pid}')">
+        return `<div class="part-card ${sel}" onclick="toggleCart('${pid}')" style="${noStock ? 'opacity:.5;cursor:not-allowed' : ''}">
           ${p.imageUrl ? `<img src="${p.imageUrl}" alt="${p.name}" class="part-img" onerror="this.style.display='none'">` : ''}
           <div class="sku">${p.sku}</div>
           <div class="name">${p.name}</div>
           <div class="cat">${p.category?.name || ''}</div>
-          <div class="price">${final} € <small style="color:#aaa;text-decoration:line-through;font-size:.8rem">${p.price}€</small></div>
-          <div class="stock">${p.stock > 0 ? '✓ Në stok: '+p.stock : '✗ Pa stok'}</div>
-          ${cart[pid] ? `<div style="margin-top:.5rem"><span class="badge badge-success">+${cart[pid]} shportë</span></div>` : ''}
+          <div class="price">${final} €</div>
+          <div class="stock" style="color:${noStock?'#e94560':'#27ae60'}">${noStock ? 'Pa stok' : 'Ne stok: '+p.stock}</div>
+          ${noStock ? `<div style="margin-top:.5rem"><span class="badge badge-danger">Pa stok</span></div>` : ''}
+          ${cart[pid] ? `<div style="margin-top:.5rem"><span class="badge badge-success">+${cart[pid]} shporte</span></div>` : ''}
         </div>`;
-    }).join('') || '<p style="color:#888">Nuk u gjetën pjesë.</p>';
+    }).join('') || '<p style="color:#888">Nuk u gjeten pjese.</p>';
     updateCartCount();
 }
 
@@ -234,8 +345,9 @@ function toggleCart(partId) {
     const part = allParts.find(p=>String(p._id||p.id)===partId);
     if (!part) return;
     if (cart[partId]) { delete cart[partId]; toast(part.name+' u hoq nga shporta',''); }
-    else              { cart[partId] = 1;    toast(part.name+' u shtua në shportë!',''); }
-    filterParts();
+    else if (part.stock <= 0) { toast(part.name+' — nuk ka stock!', 'error'); return; }
+    else              { cart[partId] = 1;    toast(part.name+' u shtua ne shporte!',''); }
+    saveCart(); filterParts();
 }
 
 function updateCartCount() {
@@ -274,28 +386,56 @@ function renderCartPanel() {
           </div>
         </div>`;
     }).join('');
-    document.getElementById('cart-items').innerHTML = items || '<p style="color:#888">Shporta është bosh</p>';
+    document.getElementById('cart-items').innerHTML = items || '<p style="color:#888">Shporta eshte bosh</p>';
 
     const subtotal = Object.entries(cart).reduce((acc,[id,qty])=>{
         const p=allParts.find(p=>p.id==id); return acc+(p?p.price*(1-disc/100)*qty:0);},0);
     document.getElementById('cart-summary').innerHTML = `
-      <div style="font-size:.9rem;color:#666">Nëntotali (me -${disc}%): <strong>${subtotal.toFixed(2)} €</strong></div>
-      <div style="font-size:.8rem;color:#aaa;margin-top:.3rem">+ Transporti llogaritet sipas adresës</div>`;
+      <div style="font-size:.9rem;color:#666">Nentotali (me -${disc}%): <strong>${subtotal.toFixed(2)} €</strong></div>
+      <div id="ship-cost-preview" style="font-size:.9rem;color:#666;margin-top:.4rem">Transport: <span style="color:#aaa">zgjidh qytetin...</span></div>`;
+    calcShippingPreview();
 }
 
 function changeQty(id, delta) {
     if (!cart[id]) return;
-    cart[id] = Math.max(1, cart[id] + delta);
-    renderCartPanel(); filterParts();
+    const part = allParts.find(p => String(p._id||p.id) === id);
+    const maxStock = part ? part.stock : 1;
+    cart[id] = Math.min(maxStock, Math.max(1, cart[id] + delta));
+    saveCart(); renderCartPanel(); filterParts();
 }
 function removeFromCart(id) {
-    delete cart[id]; renderCartPanel(); filterParts();
+    delete cart[id]; saveCart(); renderCartPanel(); filterParts();
+}
+
+async function calcShippingPreview() {
+    const el = document.getElementById('ship-cost-preview');
+    if (!el) return;
+    const cityName = document.getElementById('ship-city').value;
+    if (!cityName || !CITIES[cityName]) {
+        el.innerHTML = 'Transport: <span style="color:#aaa">zgjidh qytetin...</span>';
+        return;
+    }
+    const coords = CITIES[cityName];
+    el.innerHTML = 'Transport: <span style="color:#aaa">duke llogaritur...</span>';
+    try {
+        const r = await apiFetch('/api/shipping/calculate', {
+            method: 'POST',
+            body: JSON.stringify({ dest_latitude: coords.lat, dest_longitude: coords.lon, dest_city: cityName })
+        });
+        const d = await r.json();
+        if (r.ok) {
+            el.innerHTML = `Transport (${cityName}): <strong style="color:#0f3460">${d.cost.toFixed(2)} €</strong>`;
+        }
+    } catch(e) {
+        el.innerHTML = 'Transport: <span style="color:#aaa">gabim llogaritjeje</span>';
+    }
 }
 
 async function placeOrder() {
     const items = Object.entries(cart).map(([id,qty])=>({part_id:id,quantity:qty}));
-    if (!items.length) return toast('Shporta është bosh!','error');
+    if (!items.length) return toast('Shporta eshte bosh!','error');
     const cityName   = document.getElementById('ship-city').value;
+    if (!cityName || !CITIES[cityName]) return toast('Zgjidh qytetin e dergimit!','error');
     const cityCoords = CITIES[cityName] || null;
     const body = {
         items,
@@ -308,9 +448,9 @@ async function placeOrder() {
     const d = await r.json();
     if (!r.ok) return toast(d.error,'error');
     toast(`Porosia u krijua! Totali: ${d.order.total} €`);
-    cart = {}; closeCart(); filterParts();
+    cart = {}; saveCart(); closeCart(); loadParts();
 
-    // Merr të dhënat e përditësuara (tier mund të ketë ndryshuar)
+    // Merr te dhenat e perditesuara (tier mund te kete ndryshuar)
     const meR = await apiFetch('/api/auth/me');
     if (meR.ok) {
         user = await meR.json();
@@ -320,20 +460,73 @@ async function placeOrder() {
 }
 
 // ─── ORDERS ──────────────────────────────────────────────────────────────────
+function showConfirm(msg) {
+    return new Promise(resolve => {
+        const overlay = document.getElementById('confirm-overlay');
+        document.getElementById('confirm-msg').textContent = msg;
+        overlay.style.display = 'flex';
+        const yes = document.getElementById('confirm-yes');
+        const no  = document.getElementById('confirm-no');
+        const cleanup = (val) => { overlay.style.display = 'none'; yes.onclick = null; no.onclick = null; resolve(val); };
+        yes.onclick = () => cleanup(true);
+        no.onclick  = () => cleanup(false);
+    });
+}
+
+async function viewOrder(id) {
+    const r = await apiFetch(`/api/orders/${id}`);
+    const d = await r.json();
+    if (!r.ok) return toast(d.error,'error');
+    const o = d.order;
+    document.getElementById('order-modal-body').innerHTML = `
+      <p style="color:#888;font-size:.85rem;margin-bottom:1rem">Data: ${new Date(o.createdAt).toLocaleDateString('sq-AL')} &nbsp;|&nbsp; Adresa: ${o.shippingAddress||'—'}, ${o.shippingCity||'—'}</p>
+      <table style="width:100%;border-collapse:collapse;font-size:.88rem;margin-bottom:1rem">
+        <thead><tr style="background:#f8f9fa"><th style="padding:.5rem .8rem;text-align:left">Artikulli</th><th style="padding:.5rem .8rem;text-align:left">SKU</th><th style="padding:.5rem .8rem;text-align:right">Cmimi</th><th style="padding:.5rem .8rem;text-align:right">Sasia</th><th style="padding:.5rem .8rem;text-align:right">Nentotali</th></tr></thead>
+        <tbody>${o.items.map(it=>`<tr style="border-bottom:1px solid #f0f0f0">
+          <td style="padding:.5rem .8rem">${it.part?.name||'Pjese e fshire'}</td>
+          <td style="padding:.5rem .8rem;color:#888">${it.part?.sku||'—'}</td>
+          <td style="padding:.5rem .8rem;text-align:right">${it.unitPrice.toFixed(2)} €</td>
+          <td style="padding:.5rem .8rem;text-align:right">${it.quantity}</td>
+          <td style="padding:.5rem .8rem;text-align:right"><strong>${it.subtotal.toFixed(2)} €</strong></td>
+        </tr>`).join('')}</tbody>
+      </table>
+      <div style="text-align:right;font-size:.9rem;line-height:1.8">
+        <div>Nentotali: <strong>${o.subtotal.toFixed(2)} €</strong></div>
+        <div style="color:#27ae60">Zbritja (${o.discountPct}%): <strong>-${o.discountAmount.toFixed(2)} €</strong></div>
+        <div>Transport: <strong>${o.shippingCost.toFixed(2)} €</strong></div>
+        <div style="font-size:1.05rem;border-top:2px solid #f0f0f0;margin-top:.4rem;padding-top:.4rem">Totali: <strong>${o.total.toFixed(2)} €</strong></div>
+      </div>`;
+    document.getElementById('order-modal').style.display = 'flex';
+}
+
+async function cancelOrder(id) {
+    const ok = await showConfirm('Jeni i sigurt qe doni te anuloni kete porosi?');
+    if (!ok) return;
+    const r = await apiFetch(`/api/orders/${id}`, { method: 'DELETE' });
+    const d = await r.json();
+    if (!r.ok) return toast(d.error, 'error');
+    toast('Porosia u anulua me sukses');
+    loadOrders();
+}
+
 async function loadOrders() {
     const orders = await (await apiFetch('/api/orders')).json();
     document.getElementById('orders-table').innerHTML = orders.length ? `
       <table>
-        <thead><tr><th>#</th><th>Data</th><th>Nëntotali</th><th>Zbritja</th><th>Transport</th><th>Totali</th><th>Statusi</th></tr></thead>
+        <thead><tr><th>#</th><th>Data</th><th>Nentotali</th><th>Zbritja</th><th>Transport</th><th>Totali</th><th>Statusi</th><th></th></tr></thead>
         <tbody>${orders.map(o=>`
           <tr>
             <td><strong>#${String(o._id).slice(-6).toUpperCase()}</strong></td>
             <td>${new Date(o.createdAt).toLocaleDateString('sq-AL')}</td>
             <td>${o.subtotal.toFixed(2)} €</td>
             <td style="color:#27ae60">-${o.discountAmount.toFixed(2)} € (${o.discountPct}%)</td>
-            <td>${o.shippingCost.toFixed(2)} € <small style="color:#aaa">(${Math.round(o.distanceKm||0)} km)</small></td>
+            <td>${o.shippingCost.toFixed(2)} €</td>
             <td><strong>${o.total.toFixed(2)} €</strong></td>
-            <td><span class="badge badge-success">${o.status}</span></td>
+            <td><span class="badge ${o.status==='cancelled'?'badge-danger':o.status==='delivered'?'badge-success':'badge-warning'}">${o.status}</span></td>
+            <td style="display:flex;gap:.4rem">
+              <button class="btn btn-sm" style="background:#0f3460;color:#fff;padding:.3rem .7rem;font-size:.8rem" onclick="viewOrder('${o._id}')">Detaje</button>
+              ${['pending','confirmed'].includes(o.status)?`<button class="btn btn-sm" style="background:#e94560;color:#fff;padding:.3rem .7rem;font-size:.8rem" onclick="cancelOrder('${o._id}')">Anulo</button>`:''}
+            </td>
           </tr>`).join('')}
         </tbody>
       </table>` : '<p style="color:#888">Nuk ke porosi ende.</p>';
@@ -342,10 +535,13 @@ async function loadOrders() {
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 const shipCitySel = document.getElementById('ship-city');
+const profCitySel = document.getElementById('prof-city');
 Object.keys(CITIES).forEach(c => {
-    const o = document.createElement('option'); o.value = c; o.textContent = c; shipCitySel.appendChild(o);
+    const o1 = document.createElement('option'); o1.value = c; o1.textContent = c; shipCitySel.appendChild(o1);
+    const o2 = document.createElement('option'); o2.value = c; o2.textContent = c; profCitySel.appendChild(o2);
 });
 if (user.city && CITIES[user.city]) shipCitySel.value = user.city;
+shipCitySel.addEventListener('change', calcShippingPreview);
 
 loadHome();
 </script>

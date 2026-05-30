@@ -1,13 +1,4 @@
-/**
- * WEB SERVICE PUBLIK
- * Lejon integrimin programatik të klientëve të jashtëm.
- * Autentifikim me API Key (JWT token i klientit).
- *
- * Endpoints:
- *   GET  /ws/part-price/:sku   — çmimi i një pjese me zbritje
- *   POST /ws/shipping-cost     — kostoja e dërgimit
- *   POST /ws/quote             — ofertë e plotë (pjesë + transport)
- */
+
 const express        = require('express');
 const jwt            = require('jsonwebtoken');
 const Customer       = require('../models/Customer');
@@ -19,19 +10,19 @@ const router = express.Router();
 
 function wsAuth(req, res, next) {
     const key = req.headers['x-api-key'] || req.query.api_key;
-    if (!key) return res.status(401).json({ success: false, error: 'API key mungon. Dërgoje si x-api-key header.' });
+    if (!key) return res.status(401).json({ success: false, error: 'API key mungon. Dergoje si x-api-key header.' });
     try {
         req.user = jwt.verify(key, process.env.JWT_SECRET);
         next();
     } catch {
-        res.status(403).json({ success: false, error: 'API key i pavlefshëm ose i skaduar' });
+        res.status(403).json({ success: false, error: 'API key i pavlefshem ose i skaduar' });
     }
 }
 
 async function logApi(endpoint, userId, ip, reqBody, respBody) {
     try {
         await ApiLog.create({ endpoint, customer: userId || null, ipAddress: ip, request: reqBody, response: respBody });
-    } catch { /* log failure nuk ndërpret kërkesën */ }
+    } catch { /* log failure nuk nderpret kerkesen */ }
 }
 
 // ─── GET /ws/part-price/:sku ───────────────────────────────────────────────
@@ -76,7 +67,7 @@ router.post('/shipping-cost', wsAuth, async (req, res) => {
 
         const warehouseLat = parseFloat(process.env.WAREHOUSE_LAT) || 41.3275;
         const warehouseLon = parseFloat(process.env.WAREHOUSE_LON) || 19.8187;
-        const warehouseCity = process.env.WAREHOUSE_CITY || 'Tiranë';
+        const warehouseCity = process.env.WAREHOUSE_CITY || 'Tirane';
 
         const customer = await Customer.findById(req.user.id);
 
@@ -112,7 +103,7 @@ router.post('/quote', wsAuth, async (req, res) => {
     try {
         const { items, dest_latitude, dest_longitude, dest_city } = req.body;
         if (!items || !Array.isArray(items) || items.length === 0)
-            return res.status(400).json({ success: false, error: 'items[] kërkohet' });
+            return res.status(400).json({ success: false, error: 'items[] kerkohet' });
 
         const customer = await Customer.findById(req.user.id).populate('discountTier');
         const tier     = customer.discountTier;

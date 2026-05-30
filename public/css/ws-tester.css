@@ -1,0 +1,34 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f2f5; color: #1a1a2e; }
+header { background: #000; padding: 1.2rem 2rem; display: flex; align-items: center; gap: 1rem; }
+header h1 { color: #fff; font-size: 1.2rem; font-family: Georgia, serif; letter-spacing: 1px; }
+header h1 span { color: #e60023; }
+header .sub { color: #999; font-size: .8rem; margin-top: .1rem; }
+.wrap { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+.card { background: #fff; border-radius: 10px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,.08); margin-bottom: 1.5rem; }
+.card h2 { font-size: 1rem; font-weight: 700; color: #082567; margin-bottom: 1rem; border-bottom: 2px solid #f0f0f0; padding-bottom: .6rem; }
+.method { display: inline-block; padding: .2rem .6rem; border-radius: 4px; font-size: .75rem; font-weight: 700; margin-right: .5rem; }
+.get  { background: #d4edda; color: #155724; }
+.post { background: #d1ecf1; color: #0c5460; }
+label { display: block; font-size: .82rem; font-weight: 600; margin-bottom: .3rem; color: #333; margin-top: .8rem; }
+input { width: 100%; padding: .55rem .85rem; border: 1.5px solid #ddd; border-radius: 7px; font-size: .88rem; }
+input:focus { outline: none; border-color: #e60023; }
+.btn { display: inline-block; padding: .5rem 1.2rem; border-radius: 6px; border: none; cursor: pointer; font-size: .88rem; font-weight: 600; background: #e60023; color: #fff; margin-top: .8rem; }
+.btn:hover { opacity: .85; }
+.btn-add { background: #082567; }
+pre { margin-top: 1rem; background: #1a1a2e; color: #7ec8e3; padding: 1rem; border-radius: 8px; font-size: .8rem; overflow-x: auto; white-space: pre-wrap; min-height: 60px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.apikey-box { background: #fff8f0; border: 1.5px solid #ffd070; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; }
+.apikey-box p { font-size: .82rem; color: #7a5c00; margin-bottom: .5rem; }
+.badge-ok  { background: #d4edda; color: #155724; padding: .15rem .5rem; border-radius: 10px; font-size: .72rem; font-weight: 700; }
+.badge-err { background: #f8d7da; color: #721c24; padding: .15rem .5rem; border-radius: 10px; font-size: .72rem; font-weight: 700; }
+.quote-item { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-bottom: .5rem; }
+#status-bar { text-align: right; font-size: .78rem; color: #888; margin-bottom: 1rem; }
+select { width: 100%; padding: .55rem .85rem; border: 1.5px solid #ddd; border-radius: 7px; font-size: .88rem; background: #fff; }
+select:focus { outline: none; border-color: #e60023; }
+.header-logo { height: 60px; object-fit: contain; margin-right: 1.5rem; }
+.card-login { margin-bottom: 1rem; }
+.btn-login { margin-top: .8rem; }
+.login-msg { margin-top: .6rem; font-size: .82rem; color: #27ae60; }
+.form-row-mt { margin-top: .8rem; }
+.btn-add-mt { margin-top: .5rem; margin-bottom: .5rem; }

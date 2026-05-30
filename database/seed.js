@@ -1,20 +1,23 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
+const bcrypt   = require('bcryptjs');
 
 const DiscountTier = require('../models/DiscountTier');
 const Category     = require('../models/Category');
 const Part         = require('../models/Part');
 const ShippingRate = require('../models/ShippingRate');
+const Admin        = require('../models/Admin');
 
 async function seed() {
     await mongoose.connect(process.env.MONGODB_URI);
-    console.log('Duke ngarkuar të dhënat fillestare...');
+    console.log('Duke ngarkuar te dhenat fillestare...');
 
     await Promise.all([
         DiscountTier.deleteMany({}),
         Category.deleteMany({}),
         Part.deleteMany({}),
-        ShippingRate.deleteMany({})
+        ShippingRate.deleteMany({}),
+        Admin.deleteMany({})
     ]);
 
     // Nivelet e diskontit
@@ -25,7 +28,7 @@ async function seed() {
         { name: 'Gold',      minOrders: 20, maxOrders: null, percentage: 15 },
     ]);
 
-    // Kategoritë
+    // Kategorite
     const categories = await Category.insertMany([
         { name: 'Motor',      slug: 'motor'      },
         { name: 'Frena',      slug: 'frena'      },
@@ -37,7 +40,7 @@ async function seed() {
     const cat = {};
     categories.forEach(c => { cat[c.slug] = c._id; });
 
-    // Pjesët e këmbimit
+    // Pjeset e kembimit
     await Part.insertMany([
         { sku: 'FIL-001', name: 'Filter vaji',          category: cat.motor,      price: 8.50,   stock: 120, weightKg: 0.3,  imageUrl: '/images/parts/filtervaji.jpg'          },
         { sku: 'FIL-002', name: 'Filter ajri',           category: cat.motor,      price: 12.00,  stock: 85,  weightKg: 0.5,  imageUrl: '/images/parts/filterajri.jpg'           },
@@ -56,14 +59,24 @@ async function seed() {
         { sku: 'MOT-002', name: 'Garniture cilindri',    category: cat.motor,      price: 120.00, stock: 10,  weightKg: 1.5,  imageUrl: '/images/parts/garnitura.jpg'            },
     ]);
 
-    // Tarifat postare
+    // Tarifat postare — bazuar ne distance reale
     await ShippingRate.insertMany([
-        { zoneName: 'Lokal (0-50km)',      baseCost: 1.00, costPerKm: 0, minKm: 0,  maxKm: 50   },
-        { zoneName: 'Rajonale (51-150km)', baseCost: 2.00, costPerKm: 0, minKm: 51, maxKm: 150  },
-        { zoneName: 'Kombëtare (151km+)',  baseCost: 3.00, costPerKm: 0, minKm: 151, maxKm: null },
+        { zoneName: 'Tirane dhe rrethinat (0-10km)', baseCost: 1.00, costPerKm: 0.00, minKm: 0,   maxKm: 10   },
+        { zoneName: 'Afersisht (11-50km)',            baseCost: 1.20, costPerKm: 0.03, minKm: 11,  maxKm: 50   },
+        { zoneName: 'Rajonale (51-120km)',            baseCost: 2.00, costPerKm: 0.02, minKm: 51,  maxKm: 120  },
+        { zoneName: 'Kombetare (121km+)',             baseCost: 3.50, costPerKm: 0.01, minKm: 121, maxKm: null },
     ]);
 
+    // Admin default
+    const adminPass = process.env.ADMIN_PASSWORD || 'Admin@CarService#2024';
+    await Admin.create({
+        name:         'Admin',
+        email:        'admin@carservice.al',
+        passwordHash: bcrypt.hashSync(adminPass, 10)
+    });
+
     console.log('Te dhenat u ngarkuan me sukses!');
+    console.log(`Admin:  admin@carservice.al  /  ${adminPass}`);
     console.log('Tani mund te regjistrohesh nga faqja: http://localhost:3000');
 
     await mongoose.disconnect();
