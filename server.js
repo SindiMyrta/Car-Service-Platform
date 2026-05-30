@@ -8,9 +8,14 @@ const rateLimit = require('express-rate-limit');
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 10,
+    keyGenerator: (req) => {
+        const email = req.body && req.body.email ? req.body.email.toLowerCase().trim() : req.ip;
+        return email;
+    },
     message: { error: 'Shume tentativa hyrjeje. Provo perseri pas 15 minutash.' },
     standardHeaders: true,
     legacyHeaders: false,
+    skipSuccessfulRequests: true,
 });
 
 const app = express();
