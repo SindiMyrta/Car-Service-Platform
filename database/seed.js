@@ -7,6 +7,7 @@ const Category     = require('../models/Category');
 const Part         = require('../models/Part');
 const ShippingRate = require('../models/ShippingRate');
 const Admin        = require('../models/Admin');
+const Customer     = require('../models/Customer');
 
 async function seed() {
     await mongoose.connect(process.env.MONGODB_URI);
@@ -17,7 +18,8 @@ async function seed() {
         Category.deleteMany({}),
         Part.deleteMany({}),
         ShippingRate.deleteMany({}),
-        Admin.deleteMany({})
+        Admin.deleteMany({}),
+        Customer.deleteMany({})
     ]);
 
     // Nivelet e diskontit

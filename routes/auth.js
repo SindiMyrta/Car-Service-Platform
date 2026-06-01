@@ -53,10 +53,13 @@ router.get('/me', async (req, res) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const customer = await Customer.findById(decoded.id).populate('discountTier');
         if (!customer) return res.status(404).json({ error: 'Useri nuk u gjet' });
+        const tier = customer.discountTier
+            ? { name: customer.discountTier.name, percentage: customer.discountTier.percentage }
+            : { name: 'Fillestar', percentage: 0 };
         res.json({
             id: customer._id, name: customer.name, email: customer.email,
             city: customer.city, totalOrders: customer.totalOrders,
-            tier: { name: customer.discountTier.name, percentage: customer.discountTier.percentage }
+            tier
         });
     } catch (err) {
         res.status(401).json({ error: 'Token i pavlefshem' });
@@ -74,13 +77,25 @@ router.post('/login', async (req, res) => {
         if (!customer || !bcrypt.compareSync(password, customer.passwordHash))
             return res.status(401).json({ error: 'Email ose fjalekalim i gabuar' });
 
+        if (!customer.discountTier) {
+            const fillestar = await DiscountTier.findOne({ name: 'Fillestar' });
+            if (fillestar) {
+                customer.discountTier = fillestar;
+                await Customer.findByIdAndUpdate(customer._id, { discountTier: fillestar._id });
+            }
+        }
+
+        const tier = customer.discountTier
+            ? { name: customer.discountTier.name, percentage: customer.discountTier.percentage }
+            : { name: 'Fillestar', percentage: 0 };
+
         const token = jwt.sign({ id: customer._id, email: customer.email }, process.env.JWT_SECRET, { expiresIn: '24h' });
         res.json({
             token,
             customer: {
                 id: customer._id, name: customer.name, email: customer.email,
                 city: customer.city, totalOrders: customer.totalOrders,
-                tier: { name: customer.discountTier.name, percentage: customer.discountTier.percentage }
+                tier
             }
         });
     } catch (err) {
@@ -101,7 +116,10 @@ router.patch('/profile', async (req, res) => {
         })() : null;
         const update = { ...(name && {name}), ...(phone && {phone}), ...(city && {city}), ...(address && {address}), ...(coords && {latitude: coords.lat, longitude: coords.lon}) };
         const customer = await Customer.findByIdAndUpdate(decoded.id, update, { new: true }).populate('discountTier');
-        res.json({ id: customer._id, name: customer.name, email: customer.email, city: customer.city, phone: customer.phone, address: customer.address, totalOrders: customer.totalOrders, tier: { name: customer.discountTier.name, percentage: customer.discountTier.percentage } });
+        const tier = customer.discountTier
+            ? { name: customer.discountTier.name, percentage: customer.discountTier.percentage }
+            : { name: 'Fillestar', percentage: 0 };
+        res.json({ id: customer._id, name: customer.name, email: customer.email, city: customer.city, phone: customer.phone, address: customer.address, totalOrders: customer.totalOrders, tier });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

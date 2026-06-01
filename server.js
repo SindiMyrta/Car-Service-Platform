@@ -3,14 +3,14 @@ const express   = require('express');
 const cors      = require('cors');
 const path      = require('path');
 const mongoose  = require('mongoose');
-const rateLimit = require('express-rate-limit');
+const { rateLimit, ipKeyGenerator } = require('express-rate-limit');
 
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 10,
     keyGenerator: (req) => {
-        const email = req.body && req.body.email ? req.body.email.toLowerCase().trim() : req.ip;
-        return email;
+        if (req.body && req.body.email) return req.body.email.toLowerCase().trim();
+        return ipKeyGenerator(req);
     },
     message: { error: 'Shume tentativa hyrjeje. Provo perseri pas 15 minutash.' },
     standardHeaders: true,
